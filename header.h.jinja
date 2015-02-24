@@ -1,0 +1,331 @@
+
+// Copyright 2015  Malcolm Inglis <http://minglis.id.au>
+//
+// This file is part of Libvec.
+//
+// Libvec is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Affero General Public License as published by the
+// Free Software Foundation, either version 3 of the License, or (at your
+// option) any later version.
+//
+// Libvec is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for
+// more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with Libvec. If not, see <https://gnu.org/licenses/>.
+
+
+// This file is the result of running:
+//     {{' '.join(argv)}}
+
+
+{% set sys_headers = sys_headers.split() %}
+{% set rel_headers = rel_headers.split() %}
+{% set typeclasses = typeclasses.split() %}
+
+
+#ifndef {{include_guard}}
+#define {{include_guard}}
+
+
+#include <libtypes/types.h>
+#include <libmacro/nelem.h>
+
+{% for path in sys_headers %}
+#include <{{path}}>
+{% endfor %}
+
+{% for path in rel_headers %}
+#include "{{path}}"
+{% endfor %}
+
+
+bool
+vec_{{funcname}}__is_valid(
+        Vec_{{typename}} );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__new(
+        {{type}} const * elements,
+        size_t length,
+        size_t capacity );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__new_empty(
+        size_t capacity );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__from_arraym(
+        ArrayM_{{typename}} );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy(
+        Vec_{{typename}} );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy_arrayc(
+        ArrayC_{{typename}} );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy_arraym(
+        ArrayM_{{typename}} );
+
+
+void
+vec_{{funcname}}__free(
+        Vec_{{typename}} * xs );
+
+
+void
+vec_{{funcname}}__set_capacity(
+        Vec_{{typename}} * xs,
+        size_t new_capacity );
+
+
+void
+vec_{{funcname}}__grow_capacity(
+        Vec_{{typename}} * xs );
+
+
+void
+vec_{{funcname}}__grow_capacity_to(
+        Vec_{{typename}} * xs,
+        size_t min_capacity );
+
+
+void
+vec_{{funcname}}__grow_capacity_by(
+        Vec_{{typename}} * xs,
+        size_t to_grow );
+
+
+void
+vec_{{funcname}}__grow_capacity_for(
+        Vec_{{typename}} * xs,
+        size_t req_space );
+
+
+void
+vec_{{funcname}}__shrink_capacity(
+        Vec_{{typename}} * xs );
+
+
+void
+vec_{{funcname}}__shrink_capacity_to(
+        Vec_{{typename}} * xs,
+        size_t max_capacity );
+
+
+void
+vec_{{funcname}}__shrink_capacity_by(
+        Vec_{{typename}} * xs,
+        size_t to_shrink );
+
+
+{{type}} *
+vec_{{funcname}}__get_elements(
+        Vec_{{typename}} xs );
+
+
+size_t
+vec_{{funcname}}__get_length(
+        Vec_{{typename}} xs );
+
+
+size_t
+vec_{{funcname}}__get_capacity(
+        Vec_{{typename}} xs );
+
+
+size_t
+vec_{{funcname}}__get_spare_capacity(
+        Vec_{{typename}} xs );
+
+
+bool
+vec_{{funcname}}__is_empty(
+        Vec_{{typename}} );
+
+
+bool
+vec_{{funcname}}__is_full(
+        Vec_{{typename}} );
+
+
+void
+vec_{{funcname}}__empty(
+        Vec_{{typename}} * xs );
+
+
+bool
+vec_{{funcname}}__same(
+        Vec_{{typename}},
+        Vec_{{typename}} );
+
+
+{{type}}
+vec_{{funcname}}__get(
+        Vec_{{typename}},
+        size_t index );
+
+
+{{type}}
+vec_{{funcname}}__set(
+        Vec_{{typename}},
+        size_t index,
+        {{type}} );
+
+
+void
+vec_{{funcname}}__set_all(
+        Vec_{{typename}} xs,
+        {{type}} );
+
+
+void
+vec_{{funcname}}__append(
+        Vec_{{typename}} * xs,
+        {{type}} x );
+
+
+void
+vec_{{funcname}}__extend_arrayc(
+        Vec_{{typename}} * xs,
+        ArrayC_{{typename}} );
+
+
+void
+vec_{{funcname}}__extend_arraym(
+        Vec_{{typename}} * xs,
+        ArrayM_{{typename}} );
+
+
+void
+vec_{{funcname}}__extend_vec(
+        Vec_{{typename}} * xs,
+        Vec_{{typename}} );
+
+
+#define vec_{{funcname}}__extend( XS, EXT ) \
+    _Generic( ( EXT ), \
+        ArrayC_{{typename}}: vec_{{funcname}}__extend_arrayc, \
+        ArrayM_{{typename}}: vec_{{funcname}}__extend_arraym, \
+        Vec_{{typename}}:    vec_{{funcname}}__extend_vec \
+    )( XS, EXT )
+
+
+bool
+vec_{{funcname}}__any(
+        Vec_{{typename}},
+        bool ( * f )( {{type}} ) );
+
+
+bool
+vec_{{funcname}}__all(
+        Vec_{{typename}},
+        bool ( * f )( {{type}} ) );
+
+
+void
+vec_{{funcname}}__each(
+        Vec_{{typename}} xs,
+        void ( * f )( {{type}} * x ) );
+
+
+void
+vec_{{funcname}}__each_b(
+        Vec_{{typename}} xs,
+        bool ( * f )( {{type}} * x ) );
+
+
+void
+vec_{{funcname}}__each_e(
+        Vec_{{typename}} xs,
+        void ( * f )( {{type}} * x ) );
+
+
+void
+vec_{{funcname}}__each_where(
+        Vec_{{typename}} xs,
+        void ( * f )( {{type}} * x ),
+        bool ( * where )( {{type}} x ) );
+
+
+void
+vec_{{funcname}}__each_where_b(
+        Vec_{{typename}} xs,
+        bool ( * f )( {{type}} * x ),
+        bool ( * where )( {{type}} x ) );
+
+
+void
+vec_{{funcname}}__each_where_e(
+        Vec_{{typename}} xs,
+        void ( * f )( {{type}} * x ),
+        bool ( * where )( {{type}} x ) );
+
+
+{{type}} *
+vec_{{funcname}}__pick(
+        Vec_{{typename}} const xs,
+        bool ( * f )( {{type}} const * pick,
+                      {{type}} x ) );
+
+
+
+ArrayC_{{typename}}
+arrayc_{{funcname}}__from_vec(
+        Vec_{{typename}} );
+
+
+ArrayM_{{typename}}
+arraym_{{funcname}}__from_vec(
+        Vec_{{typename}} );
+
+
+ArrayM_{{typename}}
+arraym_{{funcname}}__copy_vec(
+        Vec_{{typename}} );
+
+
+
+{% macro typeclass_header(name) -%}
+///////////////////////////////////
+/// TYPECLASS: {{name}}
+///////////////////////////////////
+{%- endmacro %}
+
+{% macro typeclass(name) -%}
+{% if name in typeclasses %}
+{{ typeclass_header(name) }}
+{{ caller() }}
+{% endif %}
+{%- endmacro %}
+
+
+{% call typeclass('EQ') %}
+
+bool
+vec_{{funcname}}__equal(
+        Vec_{{typename}},
+        Vec_{{typename}} );
+
+
+bool
+vec_{{funcname}}__not_equal(
+        Vec_{{typename}},
+        Vec_{{typename}} );
+
+{% endcall %}
+
+
+#endif // ifndef {{ include_guard }}
+

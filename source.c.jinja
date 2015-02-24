@@ -1,0 +1,603 @@
+
+// Copyright 2015  Malcolm Inglis <http://minglis.id.au>
+//
+// This file is part of Libvec.
+//
+// Libvec is free software: you can redistribute it and/or modify it under
+// the terms of the GNU Affero General Public License as published by the
+// Free Software Foundation, either version 3 of the License, or (at your
+// option) any later version.
+//
+// Libvec is distributed in the hope that it will be useful, but WITHOUT ANY
+// WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+// FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for
+// more details.
+//
+// You should have received a copy of the GNU Affero General Public License
+// along with Libvec. If not, see <https://gnu.org/licenses/>.
+
+
+// This file is the result of running:
+//     {{' '.join(argv)}}
+
+
+{% set sys_headers = sys_headers.split() %}
+{% set rel_headers = rel_headers.split() %}
+{% set typeclasses = typeclasses.split() %}
+
+
+#include "{{header}}"
+
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+
+#include <libtypes/types.h>
+#include <libmacro/assert.h>    // ASSERT
+#include <libmacro/logic.h>     // IMPLIES
+#include <libmacro/minmax.h>    // MIN
+#include <libbase/size.h>       // size__*
+
+{% for path in sys_headers %}
+#include <{{path}}>
+{% endfor %}
+
+{% for path in rel_headers %}
+#include "{{path}}"
+{% endfor %}
+
+
+bool
+vec_{{funcname}}__is_valid(
+        Vec_{{typename}} const xs )
+{
+    return IMPLIES( xs.e == NULL, xs.capacity == 0 )
+        && xs.length <= xs.capacity;
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__new(
+        {{type}} const * const elements,
+        size_t const length,
+        size_t const capacity )
+{
+    Vec_{{typename}} xs = vec_{{funcname}}__new_empty( capacity );
+    if ( errno ) { return xs; }
+    memcpy( xs.e, elements, length );
+    xs.length = length;
+    return xs;
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__new_empty(
+        size_t const capacity )
+{
+    errno = 0;
+    Vec_{{typename}} const xs = {
+        .capacity = capacity,
+        .e        = ( capacity == 0 ) ? NULL : malloc( capacity )
+    };
+    if ( errno ) {
+        return ( Vec_{{typename}} ){ 0 };
+    } else {
+        return xs;
+    }
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__from_arraym(
+        ArrayM_{{typename}} const xs )
+{
+    ASSERT( arraym_{{funcname}}__is_valid( xs ) );
+
+    return ( Vec_{{typename}} ){
+        .e        = xs.e,
+        .length   = xs.length,
+        .capacity = xs.length
+    };
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy(
+        Vec_{{typename}} const vec )
+{
+    ASSERT( vec_{{funcname}}__is_valid( vec ) );
+
+    return vec_{{funcname}}__new( vec.e, vec.length, vec.capacity );
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy_arrayc(
+        ArrayC_{{typename}} const xs )
+{
+    ASSERT( arrayc_{{funcname}}__is_valid( xs ) );
+
+    return vec_{{funcname}}__new( xs.e, xs.length, xs.length );
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy_arraym(
+        ArrayM_{{typename}} const xs )
+{
+    ASSERT( arraym_{{funcname}}__is_valid( xs ) );
+
+    return vec_{{funcname}}__new( xs.e, xs.length, xs.length );
+}
+
+
+void
+vec_{{funcname}}__free(
+        Vec_{{typename}} * const xs )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    if ( xs->capacity > 0 ) {
+        free( xs->e );
+        *xs = ( Vec_{{typename}} ){ 0 };
+    }
+}
+
+
+void
+vec_{{funcname}}__set_capacity(
+        Vec_{{typename}} * const xs,
+        size_t const new_capacity )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    if ( new_capacity == 0 ) {
+        vec_{{funcname}}__free( xs );
+    } else if ( new_capacity == xs->capacity ) {
+        return;
+    } else {
+        {{type}} * const new_els = realloc( xs->e, new_capacity );
+        if ( errno ) { return; }
+        *xs = ( Vec_{{typename}} ){
+            .e        = new_els,
+            .length   = MIN( xs->length, new_capacity ),
+            .capacity = new_capacity
+        };
+    }
+}
+
+
+void
+vec_{{funcname}}__grow_capacity(
+        Vec_{{typename}} * const xs )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    if ( xs->capacity == SIZE_MAX ) {
+        errno = ENOBUFS;
+    } else if ( xs->capacity > ( SIZE_MAX / 2 ) ) {
+        vec_{{funcname}}__set_capacity( xs, SIZE_MAX );
+    } else {
+        vec_{{funcname}}__set_capacity( xs, xs->capacity * 2 );
+    }
+}
+
+
+void
+vec_{{funcname}}__grow_capacity_to(
+        Vec_{{typename}} * const xs,
+        size_t const min_capacity )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    if ( xs->capacity < min_capacity ) {
+        vec_{{funcname}}__set_capacity( xs, min_capacity );
+    }
+}
+
+
+void
+vec_{{funcname}}__grow_capacity_by(
+        Vec_{{typename}} * const xs,
+        size_t const to_grow )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    if ( to_grow == 0 ) {
+        return;
+    } else if ( !size__can_add( xs->capacity, to_grow ) ) {
+        vec_{{funcname}}__set_capacity( xs, SIZE_MAX );
+        if ( errno ) { return; }
+        errno = ENOBUFS;
+    } else {
+        vec_{{funcname}}__set_capacity( xs, xs->capacity + to_grow );
+    }
+}
+
+
+void
+vec_{{funcname}}__grow_capacity_for(
+        Vec_{{typename}} * const xs,
+        size_t const req_space )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    vec_{{funcname}}__grow_capacity_by(
+            xs,
+            size__sub_b( req_space,
+                         vec_{{funcname}}__get_spare_capacity( *xs ) ) );
+}
+
+
+void
+vec_{{funcname}}__shrink_capacity(
+        Vec_{{typename}} * const xs )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    vec_{{funcname}}__set_capacity( xs, xs->capacity / 2 );
+}
+
+
+void
+vec_{{funcname}}__shrink_capacity_to(
+        Vec_{{typename}} * const xs,
+        size_t const max_capacity )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    if ( xs->capacity > max_capacity ) {
+        vec_{{funcname}}__set_capacity( xs, max_capacity );
+    }
+}
+
+
+void
+vec_{{funcname}}__shrink_capacity_by(
+        Vec_{{typename}} * const xs,
+        size_t const to_shrink )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    vec_{{funcname}}__set_capacity( xs,
+            size__sub_b( xs->capacity, to_shrink ) );
+}
+
+
+{{type}} *
+vec_{{funcname}}__get_elements(
+        Vec_{{typename}} const xs )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+
+    return xs.e;
+}
+
+
+size_t
+vec_{{funcname}}__get_length(
+        Vec_{{typename}} const xs )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+
+    return xs.length;
+}
+
+
+size_t
+vec_{{funcname}}__get_capacity(
+        Vec_{{typename}} const xs )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+
+    return xs.capacity;
+}
+
+
+size_t
+vec_{{funcname}}__get_spare_capacity(
+        Vec_{{typename}} const xs )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+
+    return xs.capacity - xs.length;
+}
+
+
+bool
+vec_{{funcname}}__is_empty(
+        Vec_{{typename}} const xs )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+
+    return xs.length == 0;
+}
+
+
+bool
+vec_{{funcname}}__is_full(
+        Vec_{{typename}} const xs )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+
+    return xs.length == xs.capacity;
+}
+
+
+void
+vec_{{funcname}}__empty(
+        Vec_{{typename}} * const xs )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    xs->length = 0;
+}
+
+
+bool
+vec_{{funcname}}__same(
+        Vec_{{typename}} const xs,
+        Vec_{{typename}} const ys )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ),
+            vec_{{funcname}}__is_valid( ys ) );
+
+    return xs.e        == ys.e
+        && xs.length   == ys.length
+        && xs.capacity == ys.capacity;
+}
+
+
+{{type}}
+vec_{{funcname}}__get(
+        Vec_{{typename}} const xs,
+        size_t const index )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ),
+            index < xs.length );
+
+    return xs.e[ index ];
+}
+
+
+{{type}}
+vec_{{funcname}}__set(
+        Vec_{{typename}} const xs,
+        size_t const index,
+        {{type}} const value )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ),
+            index < xs.length );
+
+    {{type}} const old = xs.e[ index ];
+    xs.e[ index ] = value;
+    return old;
+}
+
+
+void
+vec_{{funcname}}__set_all(
+        Vec_{{typename}} const xs,
+        {{type}} const value )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+
+    for ( size_t i = 0; i < xs.length; i++ ) {
+        xs.e[ i ] = value;
+    }
+}
+
+
+void
+vec_{{funcname}}__append(
+        Vec_{{typename}} * const xs,
+        {{type}} const x )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    if ( vec_{{funcname}}__is_full( *xs ) ) {
+        vec_{{funcname}}__grow_capacity( xs );
+        if ( errno ) { return; }
+    }
+    xs->e[ xs->length ] = x;
+    xs->length++;
+}
+
+
+void
+vec_{{funcname}}__extend_arrayc(
+        Vec_{{typename}} * const xs,
+        ArrayC_{{typename}} const ext )
+{
+    ASSERT( xs != NULL,
+            vec_{{funcname}}__is_valid( *xs ),
+            arrayc_{{funcname}}__is_valid( ext ) );
+
+    vec_{{funcname}}__grow_capacity_for( xs, ext.length );
+    bool const can_fit = ( errno != ENOBUFS );
+    if ( errno && can_fit ) { return; }
+    errno = 0;
+
+    for ( size_t i = 0; i < ext.length; i++ ) {
+        vec_{{funcname}}__append( xs, ext.e[ i ] );
+        if ( errno ) { return; }
+    }
+
+    if ( !can_fit ) {
+        errno = ENOBUFS;
+    }
+}
+
+
+void
+vec_{{funcname}}__extend_arraym(
+        Vec_{{typename}} * const xs,
+        ArrayM_{{typename}} const ext )
+{
+    vec_{{funcname}}__extend_arrayc( xs,
+            arrayc_{{funcname}}__from_arraym( ext ) );
+}
+
+
+void
+vec_{{funcname}}__extend_vec(
+        Vec_{{typename}} * const xs,
+        Vec_{{typename}} const ext )
+{
+    vec_{{funcname}}__extend_arrayc( xs,
+            arrayc_{{funcname}}__from_vec( ext ) );
+}
+
+
+bool
+vec_{{funcname}}__any(
+        Vec_{{typename}} const xs,
+        bool ( * const f )( {{type}} ) )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
+
+    return arrayc_{{funcname}}__any(
+                   arrayc_{{funcname}}__from_vec( xs ), f );
+}
+
+
+bool
+vec_{{funcname}}__all(
+        Vec_{{typename}} const xs,
+        bool ( * const f )( {{type}} ) )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
+
+    return arrayc_{{funcname}}__all(
+                   arrayc_{{funcname}}__from_vec( xs ), f );
+}
+
+
+void
+vec_{{funcname}}__each(
+        Vec_{{typename}} const xs,
+        void ( * const f )( {{type}} * ) )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
+
+    arraym_{{funcname}}__each(
+            arraym_{{funcname}}__from_vec( xs ), f );
+}
+
+
+void
+vec_{{funcname}}__each_b(
+        Vec_{{typename}} const xs,
+        bool ( * const f )( {{type}} * ) )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
+
+    arraym_{{funcname}}__each_b(
+            arraym_{{funcname}}__from_vec( xs ), f );
+}
+
+
+void
+vec_{{funcname}}__each_e(
+        Vec_{{typename}} const xs,
+        void ( * const f )( {{type}} * ) )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
+
+    arraym_{{funcname}}__each_e(
+            arraym_{{funcname}}__from_vec( xs ), f );
+}
+
+
+void
+vec_{{funcname}}__each_where(
+        Vec_{{typename}} const xs,
+        void ( * const f )( {{type}} * ),
+        bool ( * const where )( {{type}} ) )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
+
+    arraym_{{funcname}}__each_where(
+        arraym_{{funcname}}__from_vec( xs ), f, where );
+}
+
+
+void
+vec_{{funcname}}__each_where_b(
+        Vec_{{typename}} const xs,
+        bool ( * const f )( {{type}} * ),
+        bool ( * const where )( {{type}} ) )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
+
+    arraym_{{funcname}}__each_where_b(
+        arraym_{{funcname}}__from_vec( xs ), f, where );
+}
+
+
+void
+vec_{{funcname}}__each_where_e(
+        Vec_{{typename}} const xs,
+        void ( * const f )( {{type}} * ),
+        bool ( * const where )( {{type}} ) )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
+
+    arraym_{{funcname}}__each_where_e(
+        arraym_{{funcname}}__from_vec( xs ), f, where );
+}
+
+
+{{type}} *
+vec_{{funcname}}__pick(
+        Vec_{{typename}} const xs,
+        bool ( * const f )( {{type}} const * pick, {{type}} x ) )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
+
+    return arraym_{{funcname}}__pick(
+                   arraym_{{funcname}}__from_vec( xs ), f );
+}
+
+
+
+{% macro typeclass_header(name) -%}
+///////////////////////////////////
+/// TYPECLASS: {{name}}
+///////////////////////////////////
+{%- endmacro %}
+
+{% macro typeclass(name) -%}
+{% if name in typeclasses %}
+{{ typeclass_header(name) }}
+{{ caller() }}
+{% endif %}
+{%- endmacro %}
+
+
+{% call typeclass('EQ') %}
+
+bool
+vec_{{funcname}}__equal(
+        Vec_{{typename}} const xs,
+        Vec_{{typename}} const ys )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ),
+            vec_{{funcname}}__is_valid( ys ) );
+
+    return arrayc_{{funcname}}__equal(
+               arrayc_{{funcname}}__from_vec( xs ),
+               arrayc_{{funcname}}__from_vec( ys ) );
+}
+
+
+bool
+vec_{{funcname}}__not_equal(
+        Vec_{{typename}} const xs,
+        Vec_{{typename}} const ys )
+{
+    return !vec_{{funcname}}__equal( xs, ys );
+}
+
+{% endcall %}
+
