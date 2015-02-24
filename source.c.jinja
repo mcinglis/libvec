@@ -560,6 +560,36 @@ vec_{{funcname}}__pick(
 }
 
 
+ArrayC_{{typename}}
+arrayc_{{funcname}}__from_vec(
+        Vec_{{typename}} const vec )
+{
+    return ( ArrayC_{{typename}} ){
+               .e      = vec.e,
+               .length = vec.length
+           };
+}
+
+
+ArrayM_{{typename}}
+arraym_{{funcname}}__from_vec(
+        Vec_{{typename}} const vec )
+{
+    return ( ArrayM_{{typename}} ){
+               .e      = vec.e,
+               .length = vec.length
+           };
+}
+
+
+ArrayM_{{typename}}
+arraym_{{funcname}}__copy_vec(
+        Vec_{{typename}} const vec )
+{
+    return arraym_{{funcname}}__new( vec.e, vec.length );
+}
+
+
 
 {% macro typeclass_header(name) -%}
 ///////////////////////////////////
