@@ -234,43 +234,40 @@ vec_{{funcname}}__all(
         bool ( * f )( {{type}} ) );
 
 
-void
-vec_{{funcname}}__each(
-        Vec_{{typename}} xs,
-        void ( * f )( {{type}} * x ) );
+struct vec_{{funcname}}__each__options {
+    Vec_{{typename}} xs;
+    void ( * f )( {{type}} );
+    bool ( * b )( {{type}} );
+    void ( * e )( {{type}} );
+    bool ( * where )( {{type}} );
+    bool ( * where_not )( {{type}} );
+};
+
+bool
+vec_{{funcname}}__each_(
+        struct vec_{{funcname}}__each__options );
+
+#define vec_{{funcname}}__each( ... ) \
+    vec_{{funcname}}__each_( \
+        ( struct vec_{{funcname}}__each__options ){ __VA_ARGS__ } )
 
 
-void
-vec_{{funcname}}__each_b(
-        Vec_{{typename}} xs,
-        bool ( * f )( {{type}} * x ) );
+struct vec_{{funcname}}__eachp__options {
+    Vec_{{typename}} xs;
+    void ( * f )( {{type}} * );
+    bool ( * b )( {{type}} * );
+    void ( * e )( {{type}} * );
+    bool ( * where )( {{type}} );
+    bool ( * where_not )( {{type}} );
+};
 
+bool
+vec_{{funcname}}__eachp_(
+        struct vec_{{funcname}}__eachp__options );
 
-void
-vec_{{funcname}}__each_e(
-        Vec_{{typename}} xs,
-        void ( * f )( {{type}} * x ) );
-
-
-void
-vec_{{funcname}}__each_where(
-        Vec_{{typename}} xs,
-        void ( * f )( {{type}} * x ),
-        bool ( * where )( {{type}} x ) );
-
-
-void
-vec_{{funcname}}__each_where_b(
-        Vec_{{typename}} xs,
-        bool ( * f )( {{type}} * x ),
-        bool ( * where )( {{type}} x ) );
-
-
-void
-vec_{{funcname}}__each_where_e(
-        Vec_{{typename}} xs,
-        void ( * f )( {{type}} * x ),
-        bool ( * where )( {{type}} x ) );
+#define vec_{{funcname}}__eachp( ... ) \
+    vec_{{funcname}}__eachp_( \
+        ( struct vec_{{funcname}}__eachp__options ){ __VA_ARGS__ } )
 
 
 {{type}} *
@@ -278,7 +275,6 @@ vec_{{funcname}}__pick(
         Vec_{{typename}} const xs,
         bool ( * f )( {{type}} const * pick,
                       {{type}} x ) );
-
 
 
 ArrayC_{{typename}}

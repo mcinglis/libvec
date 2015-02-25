@@ -473,78 +473,25 @@ vec_{{funcname}}__all(
 }
 
 
-void
-vec_{{funcname}}__each(
-        Vec_{{typename}} const xs,
-        void ( * const f )( {{type}} * ) )
+bool
+vec_{{funcname}}__each_(
+        struct vec_{{funcname}}__each__options const o )
 {
-    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
-
-    arraym_{{funcname}}__each(
-            arraym_{{funcname}}__from_vec( xs ), f );
+    return arraym_{{funcname}}__each(
+                   arraym_{{funcname}}__from_vec( o.xs ),
+                   .f = o.f, .b = o.b, .e = o.e,
+                   .where = o.where, .where_not = o.where_not );
 }
 
 
-void
-vec_{{funcname}}__each_b(
-        Vec_{{typename}} const xs,
-        bool ( * const f )( {{type}} * ) )
+bool
+vec_{{funcname}}__eachp_(
+        struct vec_{{funcname}}__eachp__options const o )
 {
-    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
-
-    arraym_{{funcname}}__each_b(
-            arraym_{{funcname}}__from_vec( xs ), f );
-}
-
-
-void
-vec_{{funcname}}__each_e(
-        Vec_{{typename}} const xs,
-        void ( * const f )( {{type}} * ) )
-{
-    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
-
-    arraym_{{funcname}}__each_e(
-            arraym_{{funcname}}__from_vec( xs ), f );
-}
-
-
-void
-vec_{{funcname}}__each_where(
-        Vec_{{typename}} const xs,
-        void ( * const f )( {{type}} * ),
-        bool ( * const where )( {{type}} ) )
-{
-    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
-
-    arraym_{{funcname}}__each_where(
-        arraym_{{funcname}}__from_vec( xs ), f, where );
-}
-
-
-void
-vec_{{funcname}}__each_where_b(
-        Vec_{{typename}} const xs,
-        bool ( * const f )( {{type}} * ),
-        bool ( * const where )( {{type}} ) )
-{
-    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
-
-    arraym_{{funcname}}__each_where_b(
-        arraym_{{funcname}}__from_vec( xs ), f, where );
-}
-
-
-void
-vec_{{funcname}}__each_where_e(
-        Vec_{{typename}} const xs,
-        void ( * const f )( {{type}} * ),
-        bool ( * const where )( {{type}} ) )
-{
-    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
-
-    arraym_{{funcname}}__each_where_e(
-        arraym_{{funcname}}__from_vec( xs ), f, where );
+    return arraym_{{funcname}}__eachp(
+                   arraym_{{funcname}}__from_vec( o.xs ),
+                   .f = o.f, .b = o.b, .e = o.e,
+                   .where = o.where, .where_not = o.where_not );
 }
 
 
