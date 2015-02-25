@@ -20,8 +20,10 @@ CFLAGS ?= $(cflags_std) -g $(cflags_warnings)
 PYTHON ?= python
 
 RENDER_JINJA_SCRIPT ?= $(DEPS_DIR)/render-jinja/render_jinja.py
-
 RENDER_JINJA ?= $(PYTHON) $(RENDER_JINJA_SCRIPT)
+
+map = $(foreach x,$2,$(call $1,$x))
+uc = $(shell echo $1 | tr [:lower:] [:upper:])
 
 types := bool ord char schar uchar short ushort int uint long ulong \
          llong ullong int8 uint8 int16 uint16 int32 uint32 \
@@ -47,11 +49,12 @@ common_typeclasses := EQ
 
 prefix := vec-
 
-name_to_header_path = $(prefix)$(1).h
-name_to_source_path = $(prefix)$(1).c
+path_to_name        = $(subst $(prefix),,$(notdir $(basename $1)))
+name_to_header_path = $(prefix)$1.h
+name_to_source_path = $(prefix)$1.c
 
-gen_headers := $(foreach t,$(types),$(call name_to_header_path,$(t)))
-gen_sources := $(foreach t,$(types),$(call name_to_source_path,$(t)))
+gen_headers := $(call map,name_to_header_path,$(types))
+gen_sources := $(call map,name_to_source_path,$(types))
 
 sources := $(wildcard *.c) $(gen_sources)
 objects := $(sources:.c=.o)
@@ -66,27 +69,31 @@ mkdeps  := $(sources:.c=.dep.mk)
 .PHONY: all
 all: $(objects)
 
+
 .PHONY: fast
 fast: CPPFLAGS += -DNDEBUG -DNO_ASSERT -DNO_REQUIRE -DNO_DEBUG
 fast: CFLAGS = $(cflags_std) -O3 $(cflags_warnings)
 fast: all
 
 
-uc = $(shell echo $(1) | tr [:lower:] [:upper:])
-
+$(gen_sources): %.c: %.h
 $(gen_headers) $(gen_sources): $(RENDER_JINJA_SCRIPT)
 
-$(gen_headers): $(prefix)%.h: header.h.jinja
-	$(RENDER_JINJA) $< "include_guard=LIBVEC_VEC_$(call uc,$*)_H" "sys_headers=libbase/$*.h" "rel_headers=" "type=$(or $($(*)_type),$*)" "typename=$*" "funcname=$*" "typeclasses=$(common_typeclasses) $($(*)_typeclasses)" -o $@
+$(gen_headers): header.h.jinja
+	$(eval n := $(call path_to_name,$@))
+	$(eval u := $(call uc,$n))
+	$(RENDER_JINJA) $< "include_guard=LIBVEC_VEC_$u_H" "sys_headers=libbase/$n.h" "rel_headers=" "type=$(or $($(n)_type),$n)" "typename=$n" "funcname=$n" "typeclasses=$(common_typeclasses) $($(n)_typeclasses)" -o $@
 
-$(gen_sources): %.c: %.h
-$(gen_sources): $(prefix)%.c: source.c.jinja
-	$(RENDER_JINJA) $< "header=$(call name_to_header_path,$*)" "sys_headers=libarray/array-$*.h" "rel_headers=" "type=$(or $($(*)_type),$*)" "typename=$*" "funcname=$*" "typeclasses=$(common_typeclasses) $($(*)_typeclasses)" -o $@
+$(gen_sources): source.c.jinja
+	$(eval n := $(call path_to_name,$@))
+	$(eval u := $(call uc,$*))
+	$(RENDER_JINJA) $< "header=$(call name_to_header_path,$n)" "sys_headers=libarray/array-$n.h" "rel_headers=" "type=$(or $($(n)_type),$n)" "typename=$n" "funcname=$n" "typeclasses=$(common_typeclasses) $($(n)_typeclasses)" -o $@
 
 
 .PHONY: clean
 clean:
 	rm -rf $(gen_sources) $(gen_headers) $(objects) $(mkdeps)
+
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -MMD -MF "$(@:.o=.dep.mk)" -c $< -o $@
