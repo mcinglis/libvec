@@ -177,6 +177,8 @@ vec_{{funcname}}__grow_capacity(
         errno = ENOBUFS;
     } else if ( xs->capacity > ( SIZE_MAX / 2 ) ) {
         vec_{{funcname}}__set_capacity( xs, SIZE_MAX );
+    } else if ( xs->capacity == 0 ) {
+        vec_{{funcname}}__set_capacity( xs, 16 );
     } else {
         vec_{{funcname}}__set_capacity( xs, xs->capacity * 2 );
     }
