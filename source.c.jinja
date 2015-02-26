@@ -388,7 +388,7 @@ vec_{{funcname}}__set_all(
 }
 
 
-void
+{{type}} *
 vec_{{funcname}}__append(
         Vec_{{typename}} * const xs,
         {{type}} const x )
@@ -397,10 +397,12 @@ vec_{{funcname}}__append(
 
     if ( vec_{{funcname}}__is_full( *xs ) ) {
         vec_{{funcname}}__grow_capacity( xs );
-        if ( errno ) { return; }
+        if ( errno ) { return NULL; }
     }
-    xs->e[ xs->length ] = x;
+    {{type}} * const p = xs->e + xs->length;
+    *p = x;
     xs->length++;
+    return p;
 }
 
 
