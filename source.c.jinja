@@ -77,7 +77,9 @@ vec_{{funcname}}__new_empty(
     errno = 0;
     Vec_{{typename}} const xs = {
         .capacity = capacity,
-        .e        = ( capacity == 0 ) ? NULL : malloc( capacity )
+        .e        = ( capacity == 0 )
+                        ? NULL
+                        : malloc( capacity * sizeof ( {{type}} ) )
     };
     if ( errno ) {
         return ( Vec_{{typename}} ){ 0 };
