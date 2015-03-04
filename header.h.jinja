@@ -177,6 +177,12 @@ vec_{{funcname}}__get(
         size_t index );
 
 
+{{type}} *
+vec_{{funcname}}__get_ptr(
+        Vec_{{typename}},
+        size_t index );
+
+
 {{type}}
 vec_{{funcname}}__set(
         Vec_{{typename}},
@@ -186,8 +192,18 @@ vec_{{funcname}}__set(
 
 void
 vec_{{funcname}}__set_all(
-        Vec_{{typename}} xs,
+        Vec_{{typename}},
         {{type}} );
+
+
+{{type}}
+vec_{{funcname}}__first(
+        Vec_{{typename}} );
+
+
+{{type}}
+vec_{{funcname}}__last(
+        Vec_{{typename}} );
 
 
 {{type}} *

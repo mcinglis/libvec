@@ -362,6 +362,18 @@ vec_{{funcname}}__get(
 }
 
 
+{{type}} *
+vec_{{funcname}}__get_ptr(
+        Vec_{{typename}} const xs,
+        size_t const index )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ),
+            index < xs.length );
+
+    return xs.e + index;
+}
+
+
 {{type}}
 vec_{{funcname}}__set(
         Vec_{{typename}} const xs,
@@ -387,6 +399,26 @@ vec_{{funcname}}__set_all(
     for ( size_t i = 0; i < xs.length; i++ ) {
         xs.e[ i ] = value;
     }
+}
+
+
+{{type}}
+vec_{{funcname}}__first(
+        Vec_{{typename}} const xs )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), xs.length >= 1 );
+
+    return xs.e[ 0 ];
+}
+
+
+{{type}}
+vec_{{funcname}}__last(
+        Vec_{{typename}} const xs )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), xs.length >= 1 );
+
+    return xs.e[ xs.length - 1 ];
 }
 
 
