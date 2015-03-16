@@ -17,25 +17,29 @@
 // along with Libvec. If not, see <https://gnu.org/licenses/>.
 
 
-// This file is the result of running:
-//     {{' '.join(argv)}}
+// This file is the result of rendering:
+//
+//     {{template_path}}
+//
+// You should make changes to this file by tuning the build process, or (at a
+// stretch) modifying the generation script or template file; not by editing
+// this file as-is.
 
 
-{% set sys_headers = sys_headers.split() %}
-{% set rel_headers = rel_headers.split() %}
-{% set typeclasses = typeclasses.split() %}
-
-
-#ifndef {{include_guard}}
-#define {{include_guard}}
+#ifndef LIBVEC_VEC_{{macroname}}_H
+#define LIBVEC_VEC_{{macroname}}_H
 
 
 #include <libtypes/types.h>
 #include <libmacro/nelem.h>
+#include <libmaybe/def/maybe-size.h>
+#include <libarray/def/array-{{filename}}.h>
 
 {% for path in sys_headers %}
 #include <{{path}}>
 {% endfor %}
+
+#include "def/vec-{{filename}}.h"
 
 {% for path in rel_headers %}
 #include "{{path}}"
@@ -60,11 +64,6 @@ vec_{{funcname}}__new_empty(
 
 
 Vec_{{typename}}
-vec_{{funcname}}__from_arraym(
-        ArrayM_{{typename}} );
-
-
-Vec_{{typename}}
 vec_{{funcname}}__copy(
         Vec_{{typename}} );
 
@@ -79,13 +78,35 @@ vec_{{funcname}}__copy_arraym(
         ArrayM_{{typename}} );
 
 
+Vec_{{typename}}
+vec_{{funcname}}__copyc_arrayc(
+        ArrayC_{{typename}},
+        size_t capacity );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copyc_arraym(
+        ArrayM_{{typename}},
+        size_t capacity );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__view_arraym(
+        ArrayM_{{typename}} );
+
+
 void
 vec_{{funcname}}__free(
         Vec_{{typename}} * xs );
 
 
 void
-vec_{{funcname}}__set_capacity(
+vec_{{funcname}}__freev(
+        Vec_{{typename}} xs );
+
+
+void
+vec_{{funcname}}__realloc(
         Vec_{{typename}} * xs,
         size_t new_capacity );
 
@@ -130,23 +151,28 @@ vec_{{funcname}}__shrink_capacity_by(
         size_t to_shrink );
 
 
+void
+vec_{{funcname}}__free_spare_capacity(
+        Vec_{{typename}} * xs );
+
+
 {{type}} *
-vec_{{funcname}}__get_elements(
+vec_{{funcname}}__elements(
         Vec_{{typename}} xs );
 
 
 size_t
-vec_{{funcname}}__get_length(
+vec_{{funcname}}__length(
         Vec_{{typename}} xs );
 
 
 size_t
-vec_{{funcname}}__get_capacity(
+vec_{{funcname}}__capacity(
         Vec_{{typename}} xs );
 
 
 size_t
-vec_{{funcname}}__get_spare_capacity(
+vec_{{funcname}}__spare_capacity(
         Vec_{{typename}} xs );
 
 
@@ -156,7 +182,17 @@ vec_{{funcname}}__is_empty(
 
 
 bool
+vec_{{funcname}}__isnt_empty(
+        Vec_{{typename}} );
+
+
+bool
 vec_{{funcname}}__is_full(
+        Vec_{{typename}} );
+
+
+bool
+vec_{{funcname}}__isnt_full(
         Vec_{{typename}} );
 
 
@@ -187,23 +223,13 @@ vec_{{funcname}}__get_ptr(
 vec_{{funcname}}__set(
         Vec_{{typename}},
         size_t index,
-        {{type}} );
+        {{type}} value );
 
 
 void
 vec_{{funcname}}__set_all(
         Vec_{{typename}},
-        {{type}} );
-
-
-{{type}}
-vec_{{funcname}}__first(
-        Vec_{{typename}} );
-
-
-{{type}}
-vec_{{funcname}}__last(
-        Vec_{{typename}} );
+        {{type}} value );
 
 
 {{type}} *
@@ -230,12 +256,202 @@ vec_{{funcname}}__extend_vec(
         Vec_{{typename}} );
 
 
-#define vec_{{funcname}}__extend( XS, EXT ) \
-    _Generic( ( EXT ), \
-        ArrayC_{{typename}}: vec_{{funcname}}__extend_arrayc, \
-        ArrayM_{{typename}}: vec_{{funcname}}__extend_arraym, \
-        Vec_{{typename}}:    vec_{{funcname}}__extend_vec \
-    )( XS, EXT )
+{{type}}
+vec_{{funcname}}__first(
+        Vec_{{typename}} );
+
+
+{{type}} *
+vec_{{funcname}}__first_ptr(
+        Vec_{{typename}} );
+
+
+{{type}}
+vec_{{funcname}}__last(
+        Vec_{{typename}} );
+
+
+{{type}} *
+vec_{{funcname}}__last_ptr(
+        Vec_{{typename}} );
+
+
+size_t
+vec_{{funcname}}__count(
+        Vec_{{typename}},
+        bool ( * f )( {{type}} ) );
+
+
+size_t
+vec_{{funcname}}__count_first(
+        Vec_{{typename}},
+        bool ( * f )( {{type}} ) );
+
+
+size_t
+vec_{{funcname}}__count_last(
+        Vec_{{typename}},
+        bool ( * f )( {{type}} ) );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__take(
+        Vec_{{typename}},
+        size_t n );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__drop(
+        Vec_{{typename}},
+        size_t n );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__take_end(
+        Vec_{{typename}},
+        size_t n );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__drop_end(
+        Vec_{{typename}},
+        size_t n );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__take_while(
+        Vec_{{typename}},
+        bool ( * f )( {{type}} ) );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__take_end_while(
+        Vec_{{typename}},
+        bool ( * f )( {{type}} ) );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__drop_while(
+        Vec_{{typename}},
+        bool ( * f )( {{type}} ) );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__drop_end_while(
+        Vec_{{typename}},
+        bool ( * f )( {{type}} ) );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__take_1(
+        Vec_{{typename}} );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__take_2(
+        Vec_{{typename}} );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__take_end_1(
+        Vec_{{typename}} );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__take_end_2(
+        Vec_{{typename}} );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__drop_1(
+        Vec_{{typename}} );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__drop_2(
+        Vec_{{typename}} );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__drop_end_1(
+        Vec_{{typename}} );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__drop_end_2(
+        Vec_{{typename}} );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__section(
+        Vec_{{typename}},
+        size_t start,
+        size_t stop );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__section_s(
+        Vec_{{typename}},
+        intmax_t start,
+        intmax_t stop );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__left_half(
+        Vec_{{typename}} );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__right_half(
+        Vec_{{typename}} );
+
+
+{{type}} *
+vec_{{funcname}}__find(
+        Vec_{{typename}},
+        bool ( * f )( {{type}} ) );
+
+
+{{type}} *
+vec_{{funcname}}__find_not(
+        Vec_{{typename}},
+        bool ( * f )( {{type}} ) );
+
+
+{{type}} *
+vec_{{funcname}}__find_last(
+        Vec_{{typename}},
+        bool ( * f )( {{type}} ) );
+
+
+{{type}} *
+vec_{{funcname}}__find_last_not(
+        Vec_{{typename}},
+        bool ( * f )( {{type}} ) );
+
+
+Maybe_size
+vec_{{funcname}}__find_index(
+        Vec_{{typename}},
+        bool ( * f )( {{type}} ) );
+
+
+Maybe_size
+vec_{{funcname}}__find_index_not(
+        Vec_{{typename}},
+        bool ( * f )( {{type}} ) );
+
+
+Maybe_size
+vec_{{funcname}}__find_last_index(
+        Vec_{{typename}},
+        bool ( * f )( {{type}} ) );
+
+
+Maybe_size
+vec_{{funcname}}__find_last_index_not(
+        Vec_{{typename}},
+        bool ( * f )( {{type}} ) );
 
 
 bool
@@ -250,8 +466,51 @@ vec_{{funcname}}__all(
         bool ( * f )( {{type}} ) );
 
 
+bool
+vec_{{funcname}}__only_one(
+        Vec_{{typename}},
+        bool ( * f )( {{type}} ) );
+
+
+bool
+vec_{{funcname}}__only_one_not(
+        Vec_{{typename}},
+        bool ( * f )( {{type}} ) );
+
+
+{{type}}
+vec_{{funcname}}__foldl(
+        Vec_{{typename}} xs,
+        {{type}} init,
+        {{type}} ( * f )( {{type}} acc, {{type}} x ) );
+
+
+{{type}}
+vec_{{funcname}}__foldl1(
+        Vec_{{typename}} xs,
+        {{type}} ( * f )( {{type}} acc, {{type}} x ) );
+
+
+{{type}}
+vec_{{funcname}}__foldr(
+        Vec_{{typename}} xs,
+        {{type}} init,
+        {{type}} ( * f )( {{type}} x, {{type}} acc ) );
+
+
+{{type}}
+vec_{{funcname}}__foldr1(
+        Vec_{{typename}} xs,
+        {{type}} ( * f )( {{type}} x, {{type}} acc ) );
+
+
+{{type}} *
+vec_{{funcname}}__pick(
+        Vec_{{typename}} xs,
+        bool ( * f )( {{type}} const * pick, {{type}} x ) );
+
+
 struct vec_{{funcname}}__each__options {
-    Vec_{{typename}} xs;
     void ( * f )( {{type}} );
     bool ( * b )( {{type}} );
     void ( * e )( {{type}} );
@@ -261,15 +520,15 @@ struct vec_{{funcname}}__each__options {
 
 bool
 vec_{{funcname}}__each_(
+        Vec_{{typename}},
         struct vec_{{funcname}}__each__options );
 
-#define vec_{{funcname}}__each( ... ) \
-    vec_{{funcname}}__each_( \
+#define vec_{{funcname}}__each( XS, ... ) \
+    vec_{{funcname}}__each_( XS, \
         ( struct vec_{{funcname}}__each__options ){ __VA_ARGS__ } )
 
 
 struct vec_{{funcname}}__eachp__options {
-    Vec_{{typename}} xs;
     void ( * f )( {{type}} * );
     bool ( * b )( {{type}} * );
     void ( * e )( {{type}} * );
@@ -279,27 +538,56 @@ struct vec_{{funcname}}__eachp__options {
 
 bool
 vec_{{funcname}}__eachp_(
+        Vec_{{typename}},
         struct vec_{{funcname}}__eachp__options );
 
-#define vec_{{funcname}}__eachp( ... ) \
-    vec_{{funcname}}__eachp_( \
+#define vec_{{funcname}}__eachp( XS, ... ) \
+    vec_{{funcname}}__eachp_( XS, \
         ( struct vec_{{funcname}}__eachp__options ){ __VA_ARGS__ } )
 
 
+bool
+vec_{{funcname}}__equal_by(
+        Vec_{{typename}} xs,
+        Vec_{{typename}} ys,
+        bool ( * f )( {{type}} x, {{type}} y ) );
+
+
+bool
+vec_{{funcname}}__elem_by(
+        Vec_{{typename}} xs,
+        {{type}} y,
+        bool ( * f )( {{type}} x, {{type}} y ) );
+
+
 {{type}} *
-vec_{{funcname}}__pick(
-        Vec_{{typename}} const xs,
-        bool ( * f )( {{type}} const * pick,
-                      {{type}} x ) );
+vec_{{funcname}}__elem_ptr_by(
+        Vec_{{typename}} xs,
+        {{type}} y,
+        bool ( * f )( {{type}} x, {{type}} y ) );
+
+
+Maybe_size
+vec_{{funcname}}__elem_index_by(
+        Vec_{{typename}} xs,
+        {{type}} y,
+        bool ( * f )( {{type}} x, {{type}} y ) );
+
+
+size_t
+vec_{{funcname}}__elem_count_by(
+        Vec_{{typename}} xs,
+        {{type}} y,
+        bool ( * f )( {{type}} x, {{type}} y ) );
 
 
 ArrayC_{{typename}}
-arrayc_{{funcname}}__from_vec(
+arrayc_{{funcname}}__view_vec(
         Vec_{{typename}} );
 
 
 ArrayM_{{typename}}
-arraym_{{funcname}}__from_vec(
+arraym_{{funcname}}__view_vec(
         Vec_{{typename}} );
 
 
@@ -336,8 +624,32 @@ vec_{{funcname}}__not_equal(
         Vec_{{typename}},
         Vec_{{typename}} );
 
+
+bool
+vec_{{funcname}}__elem(
+        Vec_{{typename}},
+        {{type}} );
+
+
+{{type}} *
+vec_{{funcname}}__elem_ptr(
+        Vec_{{typename}},
+        {{type}} );
+
+
+Maybe_size
+vec_{{funcname}}__elem_index(
+        Vec_{{typename}},
+        {{type}} );
+
+
+size_t
+vec_{{funcname}}__elem_count(
+        Vec_{{typename}},
+        {{type}} );
+
 {% endcall %}
 
 
-#endif // ifndef {{ include_guard }}
+#endif // ifndef LIBVEC_VEC_{{macroname}}_H
 

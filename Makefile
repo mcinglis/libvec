@@ -5,6 +5,10 @@
 
 DEPS_DIR ?= ./deps
 
+LIBBASE  ?= $(DEPS_DIR)/libbase
+LIBMAYBE ?= $(DEPS_DIR)/libmaybe
+LIBARRAY ?= $(DEPS_DIR)/libarray
+
 CPPFLAGS += -I$(DEPS_DIR)
 
 cflags_std := -std=c11
@@ -17,49 +21,62 @@ cflags_warnings := -Wall -Wextra -pedantic \
 
 CFLAGS ?= $(cflags_std) -g $(cflags_warnings)
 
-PYTHON ?= python
+TPLRENDER ?= $(DEPS_DIR)/tplrender/tplrender
 
-RENDER_JINJA_SCRIPT ?= $(DEPS_DIR)/render-jinja/render_jinja.py
-RENDER_JINJA ?= $(PYTHON) $(RENDER_JINJA_SCRIPT)
 
-map = $(foreach x,$2,$(call $1,$x))
-uc = $(shell echo $1 | tr [:lower:] [:upper:])
+test_libvec_types   := int ptr-long
+test_libbase_types  := $(test_libvec_types) size
+test_libmaybe_types := size
+test_libarray_types := $(test_libvec_types)
 
-types := bool ord char schar uchar short ushort int uint long ulong \
-         llong ullong int8 uint8 int16 uint16 int32 uint32 \
-         intmax uintmax ptrdiff wchar size ptr ptrm
+int_type         := int
+int_options      := --typeclasses BOUNDED EQ ORD ENUM NUM \
+                    --extra num_type=signed
 
-int8_type    := int8_t
-uint8_type   := uint8_t
-int16_type   := int16_t
-uint16_type  := uint16_t
-int32_type   := int32_t
-uint32_type  := uint32_t
-intmax_type  := intmax_t
-uintmax_type := uintmax_t
-ptrdiff_type := ptrdiff_t
-wchar_type   := wchar_t
-size_type    := size_t
-ptr_type     := void const *
-ptrm_type    := void *
+ptr_long_type    := long const *
+ptr_long_options := --typeclasses EQ ORD
 
-common_typeclasses := EQ
+size_type        := size_t
+size_options     := --typeclasses BOUNDED EQ ORD ENUM NUM \
+                    --extra num_type=unsigned
 
-prefix := vec-
-def_dir := def
+test_libbase_sources := $(foreach t,$(test_libbase_types),$(LIBBASE)/$t.c)
+test_libbase_headers := $(test_libbase_sources:.c=.h)
+test_libbase_objects := $(test_libbase_sources:.c=.o)
 
-path_to_name        = $(subst $(prefix),,$(notdir $(basename $1)))
-name_to_def_path    = $(def_dir)/$(prefix)$1.h
-name_to_header_path = $(prefix)$1.h
-name_to_source_path = $(prefix)$1.c
+test_libmaybe_defs := $(foreach t,$(test_libmaybe_types),$(LIBMAYBE)/def/maybe-$t.h)
 
-gen_defs    := $(call map,name_to_def_path,$(types))
-gen_headers := $(call map,name_to_header_path,$(types))
-gen_sources := $(call map,name_to_source_path,$(types))
+test_libarray_sources := $(foreach t,$(test_libarray_types),$(LIBARRAY)/array-$t.c)
+test_libarray_headers := $(test_libarray_sources:.c=.h)
+test_libarray_defs    := $(foreach t,$(test_libarray_types),$(LIBARRAY)/def/array-$t.h)
+test_libarray_objects := $(test_libarray_sources:.c=.o)
 
-sources := $(wildcard *.c) $(gen_sources)
-objects := $(sources:.c=.o)
-mkdeps  := $(sources:.c=.dep.mk)
+test_libvec_sources := $(foreach t,$(test_libvec_types),vec-$t.c)
+test_libvec_headers := $(test_libvec_sources:.c=.h)
+test_libvec_defs    := $(addprefix def/,$(test_libvec_headers))
+test_libvec_objects := $(test_libvec_sources:.c=.o)
+
+test_gen_objects := $(test_libbase_objects) \
+                    $(test_libarray_objects) \
+                    $(test_libvec_objects)
+
+test_gen := $(test_libbase_sources) \
+            $(test_libbase_headers) \
+            $(test_libmaybe_defs) \
+            $(test_libarray_sources) \
+            $(test_libarray_headers) \
+            $(test_libarray_defs) \
+            $(test_libarray_objects) \
+            $(test_libvec_sources) \
+            $(test_libvec_headers) \
+            $(test_libvec_defs) \
+            $(test_libvec_objects) \
+            $(test_gen_objects)
+
+test_binaries := $(basename $(wildcard tests/*.c))
+
+mkdeps := $(test_gen_objects:.o=.dep.mk)
+
 
 
 
@@ -68,47 +85,74 @@ mkdeps  := $(sources:.c=.dep.mk)
 ##############################
 
 .PHONY: all
-all: $(objects)
-
+all: tests
 
 .PHONY: fast
 fast: CPPFLAGS += -DNDEBUG -DNO_ASSERT -DNO_REQUIRE -DNO_DEBUG
 fast: CFLAGS = $(cflags_std) -O3 $(cflags_warnings)
 fast: all
 
+.PHONY: tests
+tests: $(test_binaries)
 
-$(gen_sources): %.c: %.h
-$(gen_defs) $(gen_headers) $(gen_sources): $(RENDER_JINJA_SCRIPT)
-
-$(def_dir):
-	mkdir -p $@
-
-$(gen_defs): def.h.jinja | $(def_dir)
-	$(eval n := $(call path_to_name,$@))
-	$(eval N := $(call uc,$n))
-	$(RENDER_JINJA) $< "include_guard=LIBVEC_DEF_VEC_$N_H" "sys_headers=" "rel_headers=" "typename=$n" "funcname=$n" "type=$(or $($(n)_type),$n)" -o $@
-
-$(gen_headers): header.h.jinja
-	$(eval n := $(call path_to_name,$@))
-	$(eval N := $(call uc,$n))
-	$(RENDER_JINJA) $< "include_guard=LIBVEC_VEC_$N_H" "sys_headers=libarray/array-$n.h" "rel_headers=$(call name_to_def_path,$n)" "type=$(or $($(n)_type),$n)" "typename=$n" "funcname=$n" "typeclasses=$(common_typeclasses) $($(n)_typeclasses)" -o $@
-
-$(gen_sources): source.c.jinja
-	$(eval n := $(call path_to_name,$@))
-	$(eval N := $(call uc,$n))
-	$(RENDER_JINJA) $< "header=$(call name_to_header_path,$n)" "sys_headers=libarray/array-$n.h" "rel_headers=" "type=$(or $($(n)_type),$n)" "typename=$n" "funcname=$n" "typeclasses=$(common_typeclasses) $($(n)_typeclasses)" -o $@
-
-
-$(objects): %.o: def/%.h
-
+.PHONY: test
+test: tests
+	@./tests/test
 
 .PHONY: clean
 clean:
-	rm -rf $(def_dir) $(gen_sources) $(gen_headers) $(objects) $(mkdeps)
+	rm -rf $(test_gen) $(test_binaries) $(mkdeps)
 
 
 %.o: %.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -MMD -MF "$(@:.o=.dep.mk)" -c $< -o $@
+
+
+tests/test: $(test_gen_objects)
+
+name_from_path = $(subst -,_,$1)
+
+$(test_libbase_headers): $(LIBBASE)/%.h: $(LIBBASE)/header.h.jinja
+	$(eval n := $(call name_from_path,$*))
+	$(TPLRENDER) $< "$($(n)_type)" $($(n)_options) -o $@
+
+$(test_libbase_sources): $(LIBBASE)/%.c: $(LIBBASE)/source.c.jinja
+	$(eval n := $(call name_from_path,$*))
+	$(TPLRENDER) $< "$($(n)_type)" $($(n)_options) -o $@
+
+$(test_libbase_objects): $(LIBBASE)/%.o: $(LIBBASE)/%.h
+
+$(test_libmaybe_defs): $(LIBMAYBE)/def/maybe-%.h: $(LIBMAYBE)/def.h.jinja
+	$(eval n := $(call name_from_path,$*))
+	$(TPLRENDER) $< "$($(n)_type)" $($(n)_options) -o $@
+
+$(test_libarray_defs): $(LIBARRAY)/def/array-%.h: $(LIBARRAY)/def.h.jinja
+	$(eval n := $(call name_from_path,$*))
+	$(TPLRENDER) $< "$($(n)_type)" $($(n)_options) -o $@
+
+$(test_libarray_headers): $(LIBARRAY)/array-%.h: $(LIBARRAY)/header.h.jinja
+	$(eval n := $(call name_from_path,$*))
+	$(TPLRENDER) $< "$($(n)_type)" $($(n)_options) -o $@
+
+$(test_libarray_sources): $(LIBARRAY)/array-%.c: $(LIBARRAY)/source.c.jinja
+	$(eval n := $(call name_from_path,$*))
+	$(TPLRENDER) $< "$($(n)_type)" $($(n)_options) --sys-headers "libbase/$*.h" -o $@
+
+$(test_libarray_objects): $(LIBARRAY)/array-%.o: $(LIBARRAY)/array-%.h $(LIBARRAY)/def/array-%.h $(LIBBASE)/%.h $(LIBBASE)/size.h $(LIBMAYBE)/def/maybe-size.h
+
+$(test_libvec_defs): def/vec-%.h: def.h.jinja
+	$(eval n := $(call name_from_path,$*))
+	$(TPLRENDER) $< "$($(n)_type)" $($(n)_options) -o $@
+
+$(test_libvec_headers): vec-%.h: header.h.jinja
+	$(eval n := $(call name_from_path,$*))
+	$(TPLRENDER) $< "$($(n)_type)" $($(n)_options) -o $@
+
+$(test_libvec_sources): vec-%.c: source.c.jinja
+	$(eval n := $(call name_from_path,$*))
+	$(TPLRENDER) $< "$($(n)_type)" $($(n)_options) --sys-headers "libbase/$*.h" -o $@
+
+$(test_libvec_objects): vec-%.o: vec-%.h def/vec-%.h $(LIBBASE)/%.h $(LIBBASE)/size.h $(LIBARRAY)/def/array-%.h $(LIBARRAY)/array-%.h $(LIBMAYBE)/def/maybe-size.h
 
 
 -include $(mkdeps)

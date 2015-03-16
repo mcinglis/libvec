@@ -1,32 +1,33 @@
 
 // Copyright 2015  Malcolm Inglis <http://minglis.id.au>
 //
-// This file is part of Libarray.
+// This file is part of Libvec.
 //
-// Libarray is free software: you can redistribute it and/or modify it under
+// Libvec is free software: you can redistribute it and/or modify it under
 // the terms of the GNU Affero General Public License as published by the
 // Free Software Foundation, either version 3 of the License, or (at your
 // option) any later version.
 //
-// Libarray is distributed in the hope that it will be useful, but WITHOUT ANY
+// Libvec is distributed in the hope that it will be useful, but WITHOUT ANY
 // WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
 // FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for
 // more details.
 //
 // You should have received a copy of the GNU Affero General Public License
-// along with Libarray. If not, see <https://gnu.org/licenses/>.
+// along with Libvec. If not, see <https://gnu.org/licenses/>.
 
 
-// This file is the result of running:
-//     {{' '.join(argv)}}
+// This file is the result of rendering:
+//
+//     {{template_path}}
+//
+// You should make changes to this file by tuning the build process, or (at a
+// stretch) modifying the generation script or template file; not by editing
+// this file as-is.
 
 
-{% set sys_headers = sys_headers.split() %}
-{% set rel_headers = rel_headers.split() %}
-
-
-#ifndef {{include_guard}}
-#define {{include_guard}}
+#ifndef LIBVEC_DEF_VEC_{{macroname}}_H
+#define LIBVEC_DEF_VEC_{{macroname}}_H
 
 
 #include <libtypes/types.h>
@@ -47,5 +48,5 @@ typedef struct vec_{{funcname}} {
 } Vec_{{typename}};
 
 
-#endif // ifndef {{ include_guard }}
+#endif // ifndef LIBVEC_DEF_VEC_{{macroname}}_H
 
