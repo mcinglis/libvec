@@ -11,15 +11,12 @@ LIBARRAY ?= $(DEPS_DIR)/libarray
 
 CPPFLAGS += -I$(DEPS_DIR)
 
-cflags_std := -std=c11
-cflags_warnings := -Wall -Wextra -pedantic \
-                   -Wcomments -Wformat=2 -Wlogical-op -Wmissing-include-dirs \
-                   -Wnested-externs -Wold-style-definition -Wredundant-decls \
-                   -Wshadow -Wstrict-prototypes -Wunused-macros -Wvla \
-                   -Wwrite-strings \
-                   -Wno-override-init -Wno-unused-parameter
-
-CFLAGS ?= $(cflags_std) -g $(cflags_warnings)
+CFLAGS ?= -std=c11 -g \
+          -Wall -Wextra -pedantic \
+          -Wcomments -Wformat=2 -Wlogical-op -Wmissing-include-dirs \
+          -Wnested-externs -Wold-style-definition -Wredundant-decls \
+          -Wshadow -Wstrict-prototypes -Wunused-macros -Wvla -Wwrite-strings \
+          -Wno-override-init -Wno-unused-parameter
 
 TPLRENDER ?= $(DEPS_DIR)/tplrender/tplrender
 
@@ -85,19 +82,14 @@ mkdeps := $(test_gen_objects:.o=.dep.mk)
 ##############################
 
 .PHONY: all
-all: tests
-
-.PHONY: fast
-fast: CPPFLAGS += -DNDEBUG -DNO_ASSERT -DNO_REQUIRE -DNO_DEBUG
-fast: CFLAGS = $(cflags_std) -O3 $(cflags_warnings)
-fast: all
+all:
 
 .PHONY: tests
 tests: $(test_binaries)
 
 .PHONY: test
 test: tests
-	@./tests/test
+	./tests/test
 
 .PHONY: clean
 clean:
@@ -138,7 +130,12 @@ $(test_libarray_sources): $(LIBARRAY)/array-%.c: $(LIBARRAY)/source.c.jinja
 	$(eval n := $(call name_from_path,$*))
 	$(TPLRENDER) $< "$($(n)_type)" $($(n)_options) --sys-headers "libbase/$*.h" -o $@
 
-$(test_libarray_objects): $(LIBARRAY)/array-%.o: $(LIBARRAY)/array-%.h $(LIBARRAY)/def/array-%.h $(LIBBASE)/%.h $(LIBBASE)/size.h $(LIBMAYBE)/def/maybe-size.h
+$(test_libarray_objects): $(LIBARRAY)/array-%.o: \
+    $(LIBARRAY)/array-%.h \
+    $(LIBARRAY)/def/array-%.h \
+    $(LIBBASE)/%.h \
+    $(LIBBASE)/size.h \
+    $(LIBMAYBE)/def/maybe-size.h
 
 $(test_libvec_defs): def/vec-%.h: def.h.jinja
 	$(eval n := $(call name_from_path,$*))
@@ -152,7 +149,14 @@ $(test_libvec_sources): vec-%.c: source.c.jinja
 	$(eval n := $(call name_from_path,$*))
 	$(TPLRENDER) $< "$($(n)_type)" $($(n)_options) --sys-headers "libbase/$*.h" -o $@
 
-$(test_libvec_objects): vec-%.o: vec-%.h def/vec-%.h $(LIBBASE)/%.h $(LIBBASE)/size.h $(LIBARRAY)/def/array-%.h $(LIBARRAY)/array-%.h $(LIBMAYBE)/def/maybe-size.h
+$(test_libvec_objects): vec-%.o: \
+    vec-%.h \
+    def/vec-%.h \
+    $(LIBBASE)/%.h \
+    $(LIBBASE)/size.h \
+    $(LIBARRAY)/def/array-%.h \
+    $(LIBARRAY)/array-%.h \
+    $(LIBMAYBE)/def/maybe-size.h
 
 
 -include $(mkdeps)
