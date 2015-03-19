@@ -82,7 +82,7 @@ mkdeps := $(test_gen_objects:.o=.dep.mk)
 ##############################
 
 .PHONY: all
-all:
+all: tests
 
 .PHONY: tests
 tests: $(test_binaries)
