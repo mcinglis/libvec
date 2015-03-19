@@ -544,7 +544,7 @@ vec_{{funcname}}__extend_arrayc(
 
     for ( size_t i = 0; i < ext.length; i++ ) {
         vec_{{funcname}}__append( xs, ext.e[ i ] );
-        ASSERT( errno != 0 );
+        ASSERT( errno == 0 );
     }
 }
 
