@@ -519,6 +519,7 @@ vec_{{funcname}}__append(
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
 
     if ( vec_{{funcname}}__is_full( *xs ) ) {
+        errno = 0;
         vec_{{funcname}}__grow_capacity( xs );
         if ( errno ) { return NULL; }
     }
