@@ -117,12 +117,6 @@ vec_{{funcname}}__grow_capacity(
 
 
 void
-vec_{{funcname}}__grow_capacity_to(
-        Vec_{{typename}} * xs,
-        size_t min_capacity );
-
-
-void
 vec_{{funcname}}__grow_capacity_by(
         Vec_{{typename}} * xs,
         size_t to_grow );
@@ -132,6 +126,12 @@ void
 vec_{{funcname}}__grow_capacity_for(
         Vec_{{typename}} * xs,
         size_t req_space );
+
+
+void
+vec_{{funcname}}__ensure_capacity(
+        Vec_{{typename}} * xs,
+        size_t min_capacity );
 
 
 void

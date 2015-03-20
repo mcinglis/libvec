@@ -267,19 +267,6 @@ vec_{{funcname}}__grow_capacity(
 
 
 void
-vec_{{funcname}}__grow_capacity_to(
-        Vec_{{typename}} * const xs,
-        size_t const min_capacity )
-{
-    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
-
-    if ( xs->capacity < min_capacity ) {
-        vec_{{funcname}}__realloc( xs, min_capacity );
-    }
-}
-
-
-void
 vec_{{funcname}}__grow_capacity_by(
         Vec_{{typename}} * const xs,
         size_t const to_grow )
@@ -307,6 +294,19 @@ vec_{{funcname}}__grow_capacity_for(
             xs,
             size__sub_b( req_space,
                          vec_{{funcname}}__spare_capacity( *xs ) ) );
+}
+
+
+void
+vec_{{funcname}}__ensure_capacity(
+        Vec_{{typename}} * const xs,
+        size_t const min_capacity )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    if ( xs->capacity < min_capacity ) {
+        vec_{{funcname}}__realloc( xs, min_capacity );
+    }
 }
 
 

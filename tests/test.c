@@ -73,12 +73,35 @@ test_vec_ptr_long( void )
 }
 
 
+static
+void
+test_capacity_growth( void )
+{
+    Vec_int v = { 0 };
+    ASSERT( v.capacity == 0 );
+    vec_int__ensure_capacity( &v, 32 );
+    ASSERT( vec_int__equal( v, ( Vec_int ){ 0 } ), v.capacity == 32 );
+    Vec_int u = VEC_INT( 123, 345, 678 );
+    vec_int__extend_vec( &v, u );
+    ASSERT( vec_int__equal( v, u ), v.capacity == 32 );
+    vec_int__grow_capacity_by( &v, 5 );
+    ASSERT( vec_int__equal( v, u ), v.capacity == 37 );
+    vec_int__ensure_capacity( &v, 32 );
+    ASSERT( vec_int__equal( v, u ), v.capacity == 37 );
+    vec_int__free( &v );
+}
+
+
 int
 main( void )
 {
+    printf( "Running tests...\n" );
     test_vec_int();
-    printf( "All `vec-int` assertions passed.\n" );
+    printf( "  Vec_int tests passed.\n" );
     test_vec_ptr_long();
-    printf( "All `vec-ptr-long` assertions passed.\n" );
+    printf( "  Vec_ptr_long tests passed.\n" );
+    test_capacity_growth();
+    printf( "  capacity growth tests passed.\n" );
+    printf( "All tests passed!\n" );
 }
 

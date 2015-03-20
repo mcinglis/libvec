@@ -48,5 +48,11 @@ typedef struct vec_{{funcname}} {
 } Vec_{{typename}};
 
 
+#define VEC_{{macroname}}( ... ) \
+    { .e = ( {{type}}[] ){ __VA_ARGS__ }, \
+      .length = NELEM( ( {{type}}[] ){ __VA_ARGS__ } ), \
+      .capacity = NELEM( ( {{type}}[] ){ __VA_ARGS__ } ) }
+
+
 #endif // ifndef LIBVEC_DEF_VEC_{{macroname}}_H
 
