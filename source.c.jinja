@@ -1083,6 +1083,76 @@ vec_{{funcname}}__pick(
 }
 
 
+static
+void
+filter( Vec_{{typename}} * const xs,
+        bool ( * const f )( {{type}} ),
+        bool result )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ), f != NULL );
+
+    size_t count = 0;
+    for ( size_t i = 0; i < xs->length; i++ ) {
+        {{type}} const el = xs->e[ i ];
+        if ( f( el ) == result ) {
+            xs->e[ count ] = el;
+            count++;
+        }
+    }
+    xs->length = count;
+}
+
+
+void
+vec_{{funcname}}__filter(
+        Vec_{{typename}} * const xs,
+        bool ( * const f )( {{type}} ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ), f != NULL );
+
+    filter( xs, f, true );
+}
+
+
+void
+vec_{{funcname}}__filter_not(
+        Vec_{{typename}} * const xs,
+        bool ( * const f )( {{type}} ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ), f != NULL );
+
+    filter( xs, f, false );
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__filtered(
+        Vec_{{typename}} const xs,
+        bool ( * const f )( {{type}} ) )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
+
+    Vec_{{typename}} new = vec_{{funcname}}__copy( xs );
+    if ( errno ) { return ( Vec_{{typename}} ){ 0 }; }
+    vec_{{funcname}}__filter( &new, f );
+    return new;
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__filtered_not(
+        Vec_{{typename}} const xs,
+        bool ( * const f )( {{type}} ) )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
+
+    Vec_{{typename}} new = vec_{{funcname}}__copy( xs );
+    if ( errno ) { return ( Vec_{{typename}} ){ 0 }; }
+    vec_{{funcname}}__filter_not( &new, f );
+    return new;
+}
+
+
 bool
 vec_{{funcname}}__each_(
         Vec_{{typename}} const xs,

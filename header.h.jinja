@@ -510,6 +510,30 @@ vec_{{funcname}}__pick(
         bool ( * f )( {{type}} const * pick, {{type}} x ) );
 
 
+void
+vec_{{funcname}}__filter(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}} ) );
+
+
+void
+vec_{{funcname}}__filter_not(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}} ) );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__filtered(
+        Vec_{{typename}} xs,
+        bool ( * f )( {{type}} ) );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__filtered_not(
+        Vec_{{typename}} xs,
+        bool ( * f )( {{type}} ) );
+
+
 struct vec_{{funcname}}__each__options {
     void ( * f )( {{type}} );
     bool ( * b )( {{type}} );

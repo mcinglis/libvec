@@ -92,16 +92,39 @@ test_capacity_growth( void )
 }
 
 
+static
+void
+test_filtering( void )
+{
+    Vec_int a = VEC_INT( 0, 1, 2, 3, 4 );
+    int * const a_els = a.e;
+    ASSERT( a.length == 5, a.capacity == 5 );
+    vec_int__filter( &a, int__is_odd );
+    ASSERT( vec_int__equal( a, ( Vec_int ) VEC_INT( 1, 3 ) ),
+            a.e == a_els );
+
+    Vec_int b = VEC_INT( 5, 6, 7, 8, 9 );
+    ASSERT( b.length == 5, b.capacity == 5 );
+    Vec_int bf = vec_int__filtered( b, int__is_even );
+    ASSERT( vec_int__equal( b, ( Vec_int ) VEC_INT( 5, 6, 7, 8, 9 ) ),
+            vec_int__equal( bf, ( Vec_int ) VEC_INT( 6, 8 ) ),
+            bf.e != b.e );
+    vec_int__free( &bf );
+}
+
+
 int
 main( void )
 {
     printf( "Running tests...\n" );
     test_vec_int();
-    printf( "  Vec_int tests passed.\n" );
+    printf( "  Vec_int tests passed\n" );
     test_vec_ptr_long();
-    printf( "  Vec_ptr_long tests passed.\n" );
+    printf( "  Vec_ptr_long tests passed\n" );
     test_capacity_growth();
-    printf( "  capacity growth tests passed.\n" );
+    printf( "  capacity growth tests passed\n" );
+    test_filtering();
+    printf( "  filtering tests passed\n" );
     printf( "All tests passed!\n" );
 }
 
