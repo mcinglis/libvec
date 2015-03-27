@@ -27,14 +27,14 @@ test_libmaybe_types := size
 test_libarray_types := $(test_libvec_types)
 
 int_type         := int
-int_options      := --typeclasses BOUNDED EQ ORD ENUM NUM \
+int_options      := --typeclasses BOUNDED EQ ORD ENUM NUM FROM_STR \
                     --extra num_type=signed
 
 ptr_long_type    := long const *
 ptr_long_options := --typeclasses EQ ORD
 
 size_type        := size_t
-size_options     := --typeclasses BOUNDED EQ ORD ENUM NUM \
+size_options     := --typeclasses BOUNDED EQ ORD ENUM NUM FROM_STR \
                     --extra num_type=unsigned
 
 test_libbase_sources := $(foreach t,$(test_libbase_types),$(LIBBASE)/$t.c)

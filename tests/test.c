@@ -133,6 +133,22 @@ test_els_funcs( void )
 }
 
 
+static
+void
+test_arg_parse( void )
+{
+    Vec_int xs = { 0 };
+    vec_int__arg_parse( NULL, "123", &xs );
+    ASSERT( vec_int__equal_els( xs, 123 ) );
+    vec_int__arg_parse( NULL, "456", &xs );
+    ASSERT( vec_int__equal_els( xs, 123, 456 ) );
+    vec_int__arg_parse( NULL, "789", &xs );
+    ASSERT( vec_int__equal_els( xs, 123, 456, 789 ) );
+    vec_int__free( &xs );
+    ASSERT( xs.e == NULL, xs.length == 0, xs.capacity == 0 );
+}
+
+
 int
 main( void )
 {
@@ -147,6 +163,8 @@ main( void )
     printf( "  filtering tests passed\n" );
     test_els_funcs();
     printf( "  els function tests passed\n" );
+    test_arg_parse();
+    printf( "  arg parse tests passed\n" );
     printf( "All tests passed!\n" );
 }
 

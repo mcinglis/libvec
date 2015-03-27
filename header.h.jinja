@@ -647,6 +647,7 @@ arraym_{{funcname}}__copy_vec(
 
 {% call typeclass('EQ') %}
 
+
 bool
 vec_{{funcname}}__equal(
         Vec_{{typename}},
@@ -698,6 +699,20 @@ size_t
 vec_{{funcname}}__elem_count(
         Vec_{{typename}},
         {{type}} );
+
+
+{% endcall %}
+
+
+{% call typeclass('FROM_STR') %}
+
+
+void
+vec_{{funcname}}__arg_parse(
+        char const * name,
+        char const * value,
+        void * vec_ptr );
+
 
 {% endcall %}
 

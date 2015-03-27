@@ -1368,3 +1368,24 @@ vec_{{funcname}}__elem_count(
 
 {% endcall %}
 
+
+{% call typeclass('FROM_STR') %}
+
+
+void
+vec_{{funcname}}__arg_parse(
+        char const * const name,
+        char const * const value,
+        void * const vec_ptr )
+{
+    ASSERT( value != NULL, vec_ptr != NULL );
+
+    {{type}} const x = {{funcname}}__from_str( value );
+    if ( errno ) { return; }
+    Vec_{{typename}} * const v = vec_ptr;
+    vec_{{funcname}}__append( v, x );
+}
+
+
+{% endcall %}
+
