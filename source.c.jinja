@@ -1306,6 +1306,32 @@ vec_{{funcname}}__not_equal(
 
 
 bool
+vec_{{funcname}}__equal_arrayc(
+        Vec_{{typename}} const xs,
+        ArrayC_{{typename}} const ys )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ),
+            arrayc_{{funcname}}__is_valid( ys ) );
+
+    return arrayc_{{funcname}}__equal(
+               arrayc_{{funcname}}__view_vec( xs ), ys );
+}
+
+
+bool
+vec_{{funcname}}__equal_arraym(
+        Vec_{{typename}} const xs,
+        ArrayM_{{typename}} const ys )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ),
+            arraym_{{funcname}}__is_valid( ys ) );
+
+    return vec_{{funcname}}__equal_arrayc(
+               xs, arrayc_{{funcname}}__view_arraym( ys ) );
+}
+
+
+bool
 vec_{{funcname}}__elem(
         Vec_{{typename}} const xs,
         {{type}} const x )

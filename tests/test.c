@@ -113,6 +113,26 @@ test_filtering( void )
 }
 
 
+static
+void
+test_els_funcs( void )
+{
+    Vec_int xs = vec_int__new_els( 10, 20, 30, 40 );
+    ASSERT( vec_int__equal_els( xs, 10, 20, 30, 40 ) );
+    vec_int__grow_capacity_by( &xs, 3 );
+    ASSERT( vec_int__equal_els( xs, 10, 20, 30, 40 ),
+            xs.capacity == 7 );
+    vec_int__append( &xs, 50 );
+    ASSERT( vec_int__equal_els( xs, 10, 20, 30, 40, 50 ),
+            xs.capacity == 7 );
+    vec_int__extend_els( &xs, 60, 70 );
+    ASSERT( vec_int__equal_els( xs, 10, 20, 30, 40, 50, 60, 70 ),
+            xs.capacity == 7 );
+    vec_int__free( &xs );
+    ASSERT( xs.e == NULL, xs.length == 0, xs.capacity == 0 );
+}
+
+
 int
 main( void )
 {
@@ -125,6 +145,8 @@ main( void )
     printf( "  capacity growth tests passed\n" );
     test_filtering();
     printf( "  filtering tests passed\n" );
+    test_els_funcs();
+    printf( "  els function tests passed\n" );
     printf( "All tests passed!\n" );
 }
 

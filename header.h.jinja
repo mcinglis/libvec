@@ -63,6 +63,11 @@ vec_{{funcname}}__new_empty(
         size_t capacity );
 
 
+#define vec_{{funcname}}__new_els( ... ) \
+    vec_{{funcname}}__copy( \
+        ( Vec_{{typename}} ) VEC_{{macroname}}( __VA_ARGS__ ) )
+
+
 Vec_{{typename}}
 vec_{{funcname}}__copy(
         Vec_{{typename}} );
@@ -254,6 +259,11 @@ void
 vec_{{funcname}}__extend_vec(
         Vec_{{typename}} * xs,
         Vec_{{typename}} );
+
+
+#define vec_{{funcname}}__extend_els( XS, ... ) \
+    vec_{{funcname}}__extend_vec( \
+        XS, ( Vec_{{typename}} ) VEC_{{macroname}}( __VA_ARGS__ ) )
 
 
 {{type}}
@@ -647,6 +657,23 @@ bool
 vec_{{funcname}}__not_equal(
         Vec_{{typename}},
         Vec_{{typename}} );
+
+
+bool
+vec_{{funcname}}__equal_arrayc(
+        Vec_{{typename}},
+        ArrayC_{{typename}} );
+
+
+bool
+vec_{{funcname}}__equal_arraym(
+        Vec_{{typename}},
+        ArrayM_{{typename}} );
+
+
+#define vec_{{funcname}}__equal_els( XS, ... ) \
+    vec_{{funcname}}__equal( \
+        XS, ( Vec_{{typename}} ) VEC_{{macroname}}( __VA_ARGS__ ) )
 
 
 bool
