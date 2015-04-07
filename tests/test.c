@@ -149,6 +149,33 @@ test_arg_parse( void )
 }
 
 
+static
+void
+test_replace( void )
+{
+    Vec_int const xs = VEC_INT( 3, 4, -8, 4, 4, 5, 4, -1 );
+
+    Vec_int const ys = vec_int__replaced( xs, 4, 6 );
+    ASSERT( vec_int__equal( ys,
+                ( Vec_int ) VEC_INT( 3, 6, -8, 6, 6, 5, 6, -1 ) ) );
+
+    vec_int__replace( ys, 5, 0 );
+    ASSERT( vec_int__equal( ys,
+                ( Vec_int ) VEC_INT( 3, 6, -8, 6, 6, 0, 6, -1 ) ) );
+
+    vec_int__replacef( ys, int__is_negative, 7 );
+    ASSERT( vec_int__equal( ys,
+                ( Vec_int ) VEC_INT( 3, 6, 7, 6, 6, 0, 6, 7 ) ) );
+
+    Vec_int const zs = vec_int__replacedf( ys, int__is_zero, 1 );
+    ASSERT( vec_int__equal( zs,
+                ( Vec_int ) VEC_INT( 3, 6, 7, 6, 6, 1, 6, 7 ) ) );
+
+    vec_int__freev( ys );
+    vec_int__freev( zs );
+}
+
+
 int
 main( void )
 {
@@ -165,6 +192,8 @@ main( void )
     printf( "  els function tests passed\n" );
     test_arg_parse();
     printf( "  arg parse tests passed\n" );
+    test_replace();
+    printf( "  replace tests passed\n" );
     printf( "All tests passed!\n" );
 }
 

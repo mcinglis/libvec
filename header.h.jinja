@@ -521,6 +521,20 @@ vec_{{funcname}}__pick(
 
 
 void
+vec_{{funcname}}__replacef(
+        Vec_{{typename}},
+        bool ( * f )( {{type}} x ),
+        {{type}} replacement );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__replacedf(
+        Vec_{{typename}} xs,
+        bool ( * f )( {{type}} x ),
+        {{type}} replacement );
+
+
+void
 vec_{{funcname}}__filter(
         Vec_{{typename}} * xs,
         bool ( * f )( {{type}} ) );
@@ -615,6 +629,22 @@ vec_{{funcname}}__elem_count_by(
         bool ( * f )( {{type}} x, {{type}} y ) );
 
 
+void
+vec_{{funcname}}__replace_by(
+        Vec_{{typename}} xs,
+        {{type}} element,
+        {{type}} replacement,
+        bool ( * eq )( {{type}} x, {{type}} el ) );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__replaced_by(
+        Vec_{{typename}} xs,
+        {{type}} element,
+        {{type}} replacement,
+        bool ( * eq )( {{type}} x, {{type}} el ) );
+
+
 ArrayC_{{typename}}
 arrayc_{{funcname}}__view_vec(
         Vec_{{typename}} );
@@ -699,6 +729,20 @@ size_t
 vec_{{funcname}}__elem_count(
         Vec_{{typename}},
         {{type}} );
+
+
+void
+vec_{{funcname}}__replace(
+        Vec_{{typename}},
+        {{type}} element,
+        {{type}} replacement );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__replaced(
+        Vec_{{typename}},
+        {{type}} element,
+        {{type}} replacement );
 
 
 {% endcall %}

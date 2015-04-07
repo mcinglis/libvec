@@ -1083,6 +1083,33 @@ vec_{{funcname}}__pick(
 }
 
 
+void
+vec_{{funcname}}__replacef(
+        Vec_{{typename}} const xs,
+        bool ( * const f )( {{type}} x ),
+        {{type}} const repl )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
+
+    arraym_{{funcname}}__replacef(
+        arraym_{{funcname}}__view_vec( xs ), f, repl );
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__replacedf(
+        Vec_{{typename}} const xs,
+        bool ( * const f )( {{type}} x ),
+        {{type}} const repl )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
+
+    return vec_{{funcname}}__view_arraym(
+               arraym_{{funcname}}__replacedf(
+                   arraym_{{funcname}}__view_vec( xs ), f, repl ) );
+}
+
+
 static
 void
 filter( Vec_{{typename}} * const xs,
@@ -1181,16 +1208,16 @@ bool
 vec_{{funcname}}__equal_by(
         Vec_{{typename}} const xs,
         Vec_{{typename}} const ys,
-        bool ( * const f )( {{type}} x, {{type}} y ) )
+        bool ( * const eq )( {{type}} x, {{type}} y ) )
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ),
             vec_{{funcname}}__is_valid( ys ),
-            f != NULL );
+            eq != NULL );
 
     return arrayc_{{funcname}}__equal_by(
                arrayc_{{funcname}}__view_vec( xs ),
                arrayc_{{funcname}}__view_vec( ys ),
-               f );
+               eq );
 }
 
 
@@ -1198,12 +1225,12 @@ bool
 vec_{{funcname}}__elem_by(
         Vec_{{typename}} const xs,
         {{type}} const y,
-        bool ( * const f )( {{type}} x, {{type}} y ) )
+        bool ( * const eq )( {{type}} x, {{type}} y ) )
 {
-    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
+    ASSERT( vec_{{funcname}}__is_valid( xs ), eq != NULL );
 
     return arrayc_{{funcname}}__elem_by(
-               arrayc_{{funcname}}__view_vec( xs ), y, f );
+               arrayc_{{funcname}}__view_vec( xs ), y, eq );
 }
 
 
@@ -1211,12 +1238,12 @@ vec_{{funcname}}__elem_by(
 vec_{{funcname}}__elem_ptr_by(
         Vec_{{typename}} const xs,
         {{type}} const y,
-        bool ( * const f )( {{type}} x, {{type}} y ) )
+        bool ( * const eq )( {{type}} x, {{type}} y ) )
 {
-    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
+    ASSERT( vec_{{funcname}}__is_valid( xs ), eq != NULL );
 
     return arraym_{{funcname}}__elem_ptr_by(
-               arraym_{{funcname}}__view_vec( xs ), y, f );
+               arraym_{{funcname}}__view_vec( xs ), y, eq );
 }
 
 
@@ -1224,12 +1251,12 @@ Maybe_size
 vec_{{funcname}}__elem_index_by(
         Vec_{{typename}} const xs,
         {{type}} const y,
-        bool ( * const f )( {{type}} x, {{type}} y ) )
+        bool ( * const eq )( {{type}} x, {{type}} y ) )
 {
-    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
+    ASSERT( vec_{{funcname}}__is_valid( xs ), eq != NULL );
 
     return arrayc_{{funcname}}__elem_index_by(
-               arrayc_{{funcname}}__view_vec( xs ), y, f );
+               arrayc_{{funcname}}__view_vec( xs ), y, eq );
 }
 
 
@@ -1237,12 +1264,41 @@ size_t
 vec_{{funcname}}__elem_count_by(
         Vec_{{typename}} const xs,
         {{type}} const y,
-        bool ( * const f )( {{type}} x, {{type}} y ) )
+        bool ( * const eq )( {{type}} x, {{type}} y ) )
 {
-    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
+    ASSERT( vec_{{funcname}}__is_valid( xs ), eq != NULL );
 
     return arrayc_{{funcname}}__elem_count_by(
-               arrayc_{{funcname}}__view_vec( xs ), y, f );
+               arrayc_{{funcname}}__view_vec( xs ), y, eq );
+}
+
+
+void
+vec_{{funcname}}__replace_by(
+        Vec_{{typename}} const xs,
+        {{type}} const el,
+        {{type}} const repl,
+        bool ( * const eq )( {{type}} x, {{type}} el ) )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), eq != NULL );
+
+    arraym_{{funcname}}__replace_by(
+        arraym_{{funcname}}__view_vec( xs ), el, repl, eq );
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__replaced_by(
+        Vec_{{typename}} const xs,
+        {{type}} const el,
+        {{type}} const repl,
+        bool ( * const eq )( {{type}} x, {{type}} el ) )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), eq != NULL );
+
+    return vec_{{funcname}}__view_arraym(
+               arraym_{{funcname}}__replaced_by(
+                   arraym_{{funcname}}__view_vec( xs ), el, repl, eq ) );
 }
 
 
@@ -1364,6 +1420,30 @@ vec_{{funcname}}__elem_count(
         {{type}} const x )
 {
     return vec_{{funcname}}__elem_count_by( xs, x, {{funcname}}__equal );
+}
+
+
+void
+vec_{{funcname}}__replace(
+        Vec_{{typename}} const xs,
+        {{type}} const el,
+        {{type}} const repl )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+
+    vec_{{funcname}}__replace_by( xs, el, repl, {{funcname}}__equal );
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__replaced(
+        Vec_{{typename}} const xs,
+        {{type}} const el,
+        {{type}} const repl )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+
+    return vec_{{funcname}}__replaced_by( xs, el, repl, {{funcname}}__equal );
 }
 
 {% endcall %}
