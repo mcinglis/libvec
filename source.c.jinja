@@ -530,6 +530,18 @@ vec_{{funcname}}__append(
 }
 
 
+{{type}}
+vec_{{funcname}}__pop(
+        Vec_{{typename}} * const xs )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ), xs->length > 0 );
+
+    {{type}} const el = vec_{{funcname}}__last( *xs );
+    xs->length--;
+    return el;
+}
+
+
 void
 vec_{{funcname}}__extend_arrayc(
         Vec_{{typename}} * const xs,

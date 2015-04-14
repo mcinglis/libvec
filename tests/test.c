@@ -176,6 +176,29 @@ test_replace( void )
 }
 
 
+static
+void
+test_pop( void )
+{
+    Vec_int xs = VEC_INT( 1, 2, 3, 4, 5 );
+
+    int const a = vec_int__pop( &xs );
+    ASSERT( a == 5, vec_int__equal( xs, ( Vec_int ) VEC_INT( 1, 2, 3, 4 ) ) );
+    int const b = vec_int__pop( &xs );
+    ASSERT( b == 4, vec_int__equal( xs, ( Vec_int ) VEC_INT( 1, 2, 3 ) ) );
+    int const c = vec_int__pop( &xs );
+    ASSERT( c == 3, vec_int__equal( xs, ( Vec_int ) VEC_INT( 1, 2 ) ) );
+    int const d = vec_int__pop( &xs );
+    ASSERT( d == 2, vec_int__equal( xs, ( Vec_int ) VEC_INT( 1 ) ) );
+    int const e = vec_int__pop( &xs );
+    ASSERT( e == 1, vec_int__is_empty( xs ) );
+    vec_int__append( &xs, 10 );
+    ASSERT( vec_int__equal( xs, ( Vec_int ) VEC_INT( 10 ) ) );
+    int const f = vec_int__pop( &xs );
+    ASSERT( f == 10, vec_int__is_empty( xs ) );
+}
+
+
 int
 main( void )
 {
@@ -194,6 +217,8 @@ main( void )
     printf( "  arg parse tests passed\n" );
     test_replace();
     printf( "  replace tests passed\n" );
+    test_pop();
+    printf( "  pop tests passed\n" );
     printf( "All tests passed!\n" );
 }
 
