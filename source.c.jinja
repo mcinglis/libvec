@@ -1285,6 +1285,23 @@ vec_{{funcname}}__elem_count_by(
 }
 
 
+{{type}} *
+vec_{{funcname}}__elem_or_append_by(
+        Vec_{{typename}} * const xs,
+        {{type}} const y,
+        bool ( * const eq )( {{type}} x, {{type}} y ) )
+{
+    ASSERT( vec_{{funcname}}__is_valid( *xs ), eq != NULL );
+
+    {{type}} * const p = vec_{{funcname}}__elem_ptr_by( *xs, y, eq );
+    if ( p == NULL ) {
+        return vec_{{funcname}}__append( xs, y );
+    } else {
+        return p;
+    }
+}
+
+
 void
 vec_{{funcname}}__replace_by(
         Vec_{{typename}} const xs,
@@ -1402,36 +1419,45 @@ vec_{{funcname}}__equal_arraym(
 bool
 vec_{{funcname}}__elem(
         Vec_{{typename}} const xs,
-        {{type}} const x )
+        {{type}} const y )
 {
-    return vec_{{funcname}}__elem_by( xs, x, {{funcname}}__equal );
+    return vec_{{funcname}}__elem_by( xs, y, {{funcname}}__equal );
 }
 
 
 {{type}} *
 vec_{{funcname}}__elem_ptr(
         Vec_{{typename}} const xs,
-        {{type}} const x )
+        {{type}} const y )
 {
-    return vec_{{funcname}}__elem_ptr_by( xs, x, {{funcname}}__equal );
+    return vec_{{funcname}}__elem_ptr_by( xs, y, {{funcname}}__equal );
 }
 
 
 Maybe_size
 vec_{{funcname}}__elem_index(
         Vec_{{typename}} const xs,
-        {{type}} const x )
+        {{type}} const y )
 {
-    return vec_{{funcname}}__elem_index_by( xs, x, {{funcname}}__equal );
+    return vec_{{funcname}}__elem_index_by( xs, y, {{funcname}}__equal );
 }
 
 
 size_t
 vec_{{funcname}}__elem_count(
         Vec_{{typename}} const xs,
-        {{type}} const x )
+        {{type}} const y )
 {
-    return vec_{{funcname}}__elem_count_by( xs, x, {{funcname}}__equal );
+    return vec_{{funcname}}__elem_count_by( xs, y, {{funcname}}__equal );
+}
+
+
+{{type}} *
+vec_{{funcname}}__elem_or_append(
+        Vec_{{typename}} * const xs,
+        {{type}} const y )
+{
+    return vec_{{funcname}}__elem_or_append_by( xs, y, {{funcname}}__equal );
 }
 
 

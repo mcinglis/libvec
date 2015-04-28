@@ -240,7 +240,7 @@ vec_{{funcname}}__set_all(
 {{type}} *
 vec_{{funcname}}__append(
         Vec_{{typename}} * xs,
-        {{type}} x );
+        {{type}} y );
 
 
 {{type}}
@@ -603,35 +603,42 @@ bool
 vec_{{funcname}}__equal_by(
         Vec_{{typename}} xs,
         Vec_{{typename}} ys,
-        bool ( * f )( {{type}} x, {{type}} y ) );
+        bool ( * eq )( {{type}} x, {{type}} y ) );
 
 
 bool
 vec_{{funcname}}__elem_by(
         Vec_{{typename}} xs,
         {{type}} y,
-        bool ( * f )( {{type}} x, {{type}} y ) );
+        bool ( * eq )( {{type}} x, {{type}} y ) );
 
 
 {{type}} *
 vec_{{funcname}}__elem_ptr_by(
         Vec_{{typename}} xs,
         {{type}} y,
-        bool ( * f )( {{type}} x, {{type}} y ) );
+        bool ( * eq )( {{type}} x, {{type}} y ) );
 
 
 Maybe_size
 vec_{{funcname}}__elem_index_by(
         Vec_{{typename}} xs,
         {{type}} y,
-        bool ( * f )( {{type}} x, {{type}} y ) );
+        bool ( * eq )( {{type}} x, {{type}} y ) );
 
 
 size_t
 vec_{{funcname}}__elem_count_by(
         Vec_{{typename}} xs,
         {{type}} y,
-        bool ( * f )( {{type}} x, {{type}} y ) );
+        bool ( * eq )( {{type}} x, {{type}} y ) );
+
+
+{{type}} *
+vec_{{funcname}}__elem_or_append_by(
+        Vec_{{typename}} * xs,
+        {{type}} y,
+        bool ( * eq )( {{ type}} x, {{type}} y ) );
 
 
 void
@@ -734,6 +741,12 @@ size_t
 vec_{{funcname}}__elem_count(
         Vec_{{typename}},
         {{type}} );
+
+
+{{type}} *
+vec_{{funcname}}__elem_or_append(
+        Vec_{{typename}} * xs,
+        {{type}} y );
 
 
 void
