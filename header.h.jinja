@@ -107,6 +107,13 @@ vec_{{funcname}}__into_vec(
 
 
 void
+vec_{{funcname}}__into_vec_with(
+        Vec_{{typename}} from,
+        Vec_{{typename}} * to,
+        void ( * copier )( {{type}} from, {{type}} * to ) );
+
+
+void
 vec_{{funcname}}__free(
         Vec_{{typename}} * xs );
 
@@ -252,6 +259,12 @@ vec_{{funcname}}__append(
 {{type}}
 vec_{{funcname}}__pop(
         Vec_{{typename}} * xs );
+
+
+void
+vec_{{funcname}}__popn(
+        Vec_{{typename}} * xs,
+        size_t const n );
 
 
 void

@@ -216,6 +216,39 @@ vec_{{funcname}}__into_vec(
 
 
 void
+vec_{{funcname}}__into_vec_with(
+        Vec_{{typename}} const from,
+        Vec_{{typename}} * const to,
+        void ( * copier )( {{type}} from, {{type}} * to ) )
+{
+    ASSERT( vec_{{funcname}}__is_valid( from ),
+            to != NULL, vec_{{funcname}}__is_valid( *to ),
+            copier != NULL );
+
+    errno = 0;
+    vec_{{funcname}}__grow_capacity_for( to, from.length );
+    if ( errno ) { return; }
+    size_t i = 0;
+    for ( ; i < from.length; i++ ) {
+        copier( vec_{{funcname}}__get( from, i ),
+                vec_{{funcname}}__get_ptr( *to, i ) );
+        if ( errno ) { break; }
+    }
+    to->length = i;
+}
+
+
+ArrayM_{{typename}}
+vec_{{funcname}}__to_arraym(
+        Vec_{{typename}} const xs )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+
+    return arraym_{{funcname}}__new( xs.e, xs.length );
+}
+
+
+void
 vec_{{funcname}}__free(
         Vec_{{typename}} * const xs )
 {
@@ -552,6 +585,17 @@ vec_{{funcname}}__pop(
     {{type}} const el = vec_{{funcname}}__last( *xs );
     xs->length--;
     return el;
+}
+
+
+void
+vec_{{funcname}}__popn(
+        Vec_{{typename}} * const xs,
+        size_t const n )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    xs->length = size__sub_b( xs->length, n );
 }
 
 
@@ -1368,7 +1412,7 @@ ArrayM_{{typename}}
 arraym_{{funcname}}__copy_vec(
         Vec_{{typename}} const xs )
 {
-    return arraym_{{funcname}}__new( xs.e, xs.length );
+    return vec_{{funcname}}__to_arraym( xs );
 }
 
 
