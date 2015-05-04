@@ -64,12 +64,12 @@ vec_{{funcname}}__new_empty(
 
 
 #define vec_{{funcname}}__new_els( ... ) \
-    vec_{{funcname}}__copy( \
+    vec_{{funcname}}__copy_vec( \
         ( Vec_{{typename}} ) VEC_{{macroname}}( __VA_ARGS__ ) )
 
 
 Vec_{{typename}}
-vec_{{funcname}}__copy(
+vec_{{funcname}}__copy_vec(
         Vec_{{typename}} );
 
 
@@ -98,6 +98,12 @@ vec_{{funcname}}__copyc_arraym(
 Vec_{{typename}}
 vec_{{funcname}}__view_arraym(
         ArrayM_{{typename}} );
+
+
+void
+vec_{{funcname}}__into_vec(
+        Vec_{{typename}} from,
+        Vec_{{typename}} * to );
 
 
 void

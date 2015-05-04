@@ -137,7 +137,7 @@ vec_{{funcname}}__new_empty(
 
 
 Vec_{{typename}}
-vec_{{funcname}}__copy(
+vec_{{funcname}}__copy_vec(
         Vec_{{typename}} const vec )
 {
     ASSERT( vec_{{funcname}}__is_valid( vec ) );
@@ -199,6 +199,19 @@ vec_{{funcname}}__view_arraym(
         .length   = xs.length,
         .capacity = xs.length
     };
+}
+
+
+void
+vec_{{funcname}}__into_vec(
+        Vec_{{typename}} const from,
+        Vec_{{typename}} * const to )
+{
+    ASSERT( vec_{{funcname}}__is_valid( from ),
+            to != NULL, vec_{{funcname}}__is_valid( *to ) );
+
+    vec_{{funcname}}__empty( to );
+    vec_{{funcname}}__extend_vec( to, from );
 }
 
 
@@ -547,14 +560,12 @@ vec_{{funcname}}__extend_arrayc(
         Vec_{{typename}} * const xs,
         ArrayC_{{typename}} const ext )
 {
-    ASSERT( xs != NULL,
-            vec_{{funcname}}__is_valid( *xs ),
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
             arrayc_{{funcname}}__is_valid( ext ) );
 
     errno = 0;
     vec_{{funcname}}__grow_capacity_for( xs, ext.length );
     if ( errno ) { return; }
-
     for ( size_t i = 0; i < ext.length; i++ ) {
         vec_{{funcname}}__append( xs, ext.e[ i ] );
         ASSERT( errno == 0 );
@@ -567,6 +578,9 @@ vec_{{funcname}}__extend_arraym(
         Vec_{{typename}} * const xs,
         ArrayM_{{typename}} const ext )
 {
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            arraym_{{funcname}}__is_valid( ext ) );
+
     vec_{{funcname}}__extend_arrayc( xs,
             arrayc_{{funcname}}__view_arraym( ext ) );
 }
@@ -577,6 +591,9 @@ vec_{{funcname}}__extend_vec(
         Vec_{{typename}} * const xs,
         Vec_{{typename}} const ext )
 {
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            vec_{{funcname}}__is_valid( ext ) );
+
     vec_{{funcname}}__extend_arrayc( xs,
             arrayc_{{funcname}}__view_vec( ext ) );
 }
@@ -1171,7 +1188,7 @@ vec_{{funcname}}__filtered(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    Vec_{{typename}} new = vec_{{funcname}}__copy( xs );
+    Vec_{{typename}} new = vec_{{funcname}}__copy_vec( xs );
     if ( errno ) { return ( Vec_{{typename}} ){ 0 }; }
     vec_{{funcname}}__filter( &new, f );
     return new;
@@ -1185,7 +1202,7 @@ vec_{{funcname}}__filtered_not(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    Vec_{{typename}} new = vec_{{funcname}}__copy( xs );
+    Vec_{{typename}} new = vec_{{funcname}}__copy_vec( xs );
     if ( errno ) { return ( Vec_{{typename}} ){ 0 }; }
     vec_{{funcname}}__filter_not( &new, f );
     return new;
