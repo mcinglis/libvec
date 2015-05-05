@@ -219,21 +219,31 @@ void
 vec_{{funcname}}__into_vec_with(
         Vec_{{typename}} const from,
         Vec_{{typename}} * const to,
-        void ( * copier )( {{type}} from, {{type}} * to ) )
+        void ( * const copier )( {{type}} from, {{type}} * to ),
+        void ( * const freer )( {{type}} * unused_to ) )
 {
     ASSERT( vec_{{funcname}}__is_valid( from ),
             to != NULL, vec_{{funcname}}__is_valid( *to ),
-            copier != NULL );
+            copier != NULL, freer != NULL );
 
     errno = 0;
     vec_{{funcname}}__grow_capacity_for( to, from.length );
     if ( errno ) { return; }
     size_t i = 0;
+    // Copy the elements of `from` into memory held by the elements of `to`:
     for ( ; i < from.length; i++ ) {
-        copier( vec_{{funcname}}__get( from, i ),
-                vec_{{funcname}}__get_ptr( *to, i ) );
-        if ( errno ) { break; }
+        {{type}} const from_el = vec_{{funcname}}__get( from, i );
+        {{type}} * const to_ptr = vec_{{funcname}}__get_ptr( *to, i );
+        if ( copier == NULL ) {
+            copier( from_el, to_ptr );
+            if ( errno ) { break; }
+        } else {
+            *to_ptr = from_el;
+        }
     }
+    // Now free all elements of `to` not replaced by elements of `from`:
+    vec_{{funcname}}__eachp( vec_{{funcname}}__drop( *to, i ),
+                             .f = freer );
     to->length = i;
 }
 
@@ -482,16 +492,6 @@ vec_{{funcname}}__isnt_full(
 }
 
 
-void
-vec_{{funcname}}__empty(
-        Vec_{{typename}} * const xs )
-{
-    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
-
-    xs->length = 0;
-}
-
-
 bool
 vec_{{funcname}}__same(
         Vec_{{typename}} const xs,
@@ -580,7 +580,9 @@ vec_{{funcname}}__append(
 vec_{{funcname}}__pop(
         Vec_{{typename}} * const xs )
 {
-    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ), xs->length > 0 );
+    ASSERT( xs != NULL,
+            vec_{{funcname}}__is_valid( *xs ),
+            vec_{{funcname}}__isnt_empty( *xs ) );
 
     {{type}} const el = vec_{{funcname}}__last( *xs );
     xs->length--;
@@ -596,6 +598,28 @@ vec_{{funcname}}__popn(
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
 
     xs->length = size__sub_b( xs->length, n );
+}
+
+
+void
+vec_{{funcname}}__empty(
+        Vec_{{typename}} * const xs )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    xs->length = 0;
+}
+
+
+void
+vec_{{funcname}}__empty_with(
+        Vec_{{typename}} * const xs,
+        void ( * const freer )( {{type}} * x ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ), freer != NULL );
+
+    vec_{{funcname}}__eachp( *xs, .f = freer );
+    vec_{{funcname}}__empty( xs );
 }
 
 

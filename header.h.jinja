@@ -110,7 +110,8 @@ void
 vec_{{funcname}}__into_vec_with(
         Vec_{{typename}} from,
         Vec_{{typename}} * to,
-        void ( * copier )( {{type}} from, {{type}} * to ) );
+        void ( * copier )( {{type}} from, {{type}} * to ),
+        void ( * freer )( {{type}} * unused_to ) );
 
 
 void
@@ -214,11 +215,6 @@ vec_{{funcname}}__isnt_full(
         Vec_{{typename}} );
 
 
-void
-vec_{{funcname}}__empty(
-        Vec_{{typename}} * xs );
-
-
 bool
 vec_{{funcname}}__same(
         Vec_{{typename}},
@@ -265,6 +261,17 @@ void
 vec_{{funcname}}__popn(
         Vec_{{typename}} * xs,
         size_t const n );
+
+
+void
+vec_{{funcname}}__empty(
+        Vec_{{typename}} * xs );
+
+
+void
+vec_{{funcname}}__empty_with(
+        Vec_{{typename}} * xs,
+        void ( * freer )( {{type}} * x ) );
 
 
 void
