@@ -927,12 +927,58 @@ vec_{{funcname}}__drop_end_2(
 }
 
 
+void
+vec_{{funcname}}__take_ptr(
+        Vec_{{typename}} * const xs,
+        size_t const n )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    *xs = vec_{{funcname}}__take( *xs, n );
+}
+
+
+void
+vec_{{funcname}}__drop_ptr(
+        Vec_{{typename}} * const xs,
+        size_t const n )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    *xs = vec_{{funcname}}__drop( *xs, n );
+}
+
+
+void
+vec_{{funcname}}__take_end_ptr(
+        Vec_{{typename}} * const xs,
+        size_t const n )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    *xs = vec_{{funcname}}__take_end( *xs, n );
+}
+
+
+void
+vec_{{funcname}}__drop_end_ptr(
+        Vec_{{typename}} * const xs,
+        size_t const n )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    *xs = vec_{{funcname}}__drop_end( *xs, n );
+}
+
+
 Vec_{{typename}}
 vec_{{funcname}}__section(
         Vec_{{typename}} const xs,
         size_t const start,
         size_t const stop )
 {
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+
     return vec_{{funcname}}__drop(
                vec_{{funcname}}__take( xs, stop ),
                start );

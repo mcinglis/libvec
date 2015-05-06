@@ -423,6 +423,30 @@ vec_{{funcname}}__drop_end_2(
         Vec_{{typename}} );
 
 
+void
+vec_{{funcname}}__take_ptr(
+        Vec_{{typename}} *,
+        size_t n );
+
+
+void
+vec_{{funcname}}__drop_ptr(
+        Vec_{{typename}} *,
+        size_t n );
+
+
+void
+vec_{{funcname}}__take_end_ptr(
+        Vec_{{typename}} *,
+        size_t n );
+
+
+void
+vec_{{funcname}}__drop_end_ptr(
+        Vec_{{typename}} *,
+        size_t n );
+
+
 Vec_{{typename}}
 vec_{{funcname}}__section(
         Vec_{{typename}},
