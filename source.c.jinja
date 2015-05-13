@@ -658,6 +658,30 @@ vec_{{funcname}}__set_all(
 }
 
 
+{{type}}
+vec_{{funcname}}__set_first(
+        Vec_{{typename}} const xs,
+        {{type}} const value )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+
+    return array_{{funcname}}__set_first(
+               array_{{funcname}}__view_vec( xs ), value );
+}
+
+
+{{type}}
+vec_{{funcname}}__set_last(
+        Vec_{{typename}} const xs,
+        {{type}} const value )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+
+    return array_{{funcname}}__set_last(
+               array_{{funcname}}__view_vec( xs ), value );
+}
+
+
 void
 vec_{{funcname}}__memset(
         Vec_{{typename}} const xs,
