@@ -1855,6 +1855,125 @@ vec_{{funcname}}__replaced(
 {% endcall %}
 
 
+{% call typeclass('NUM') %}
+
+
+static
+size_t
+strlen_null(
+        {{type}} const * const xs )
+{
+    if ( xs == NULL ) { return 0; }
+    size_t count = 0;
+    while ( !{{funcname}}__equal( xs[ count ], {{funcname}}__zero() ) ) {
+        count++;
+    }
+    return count;
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__view_strm(
+        {{type}} * const xs )
+{
+    return vec_{{funcname}}__view_array(
+               array_{{funcname}}__view_strm( xs ) );
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy_str(
+        {{type}} const * const xs )
+{
+    return vec_{{funcname}}__view_array(
+               array_{{funcname}}__copy_str( xs ) );
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copyc_str(
+        {{type}} const * const str,
+        size_t const capacity )
+{
+    size_t const len = strlen_null( str );
+    errno = 0;
+    Vec_{{typename}} new = vec_{{funcname}}__new_alloc( MAX( len, capacity ) );
+    if ( errno ) { return ( Vec_{{typename}} ){ 0 }; }
+    vec_{{funcname}}__extend_str( &new, str );
+    return new;
+}
+
+
+void
+vec_{{funcname}}__extend_str(
+        Vec_{{typename}} * const xs,
+        {{type}} const * const ext )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    size_t const len = strlen_null( ext );
+    errno = 0;
+    vec_{{funcname}}__grow_capacity_for( xs, len );
+    if ( errno ) { return; }
+    for ( size_t i = 0; i < len; i++ ) {
+        vec_{{funcname}}__append( xs, ext[ i ] );
+        ASSERT( errno == 0 );
+    }
+}
+
+
+bool
+vec_{{funcname}}__last_is_zero(
+        Vec_{{typename}} const xs )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+
+    {{type}} * const lastp = vec_{{funcname}}__lastp( xs );
+    return lastp != NULL && {{funcname}}__is_zero( *lastp );
+}
+
+
+{{type}} *
+vec_{{funcname}}__append_zero(
+        Vec_{{typename}} * const xs )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    return vec_{{funcname}}__append( xs, {{funcname}}__zero() );
+}
+
+
+{{type}} *
+vec_{{funcname}}__term_zero(
+        Vec_{{typename}} * const xs )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    if ( !vec_{{funcname}}__last_is_zero( *xs ) ) {
+        vec_{{funcname}}__append_zero( xs );
+    }
+    return vec_{{funcname}}__lastp( *xs );
+}
+
+
+bool
+vec_{{funcname}}__pop_zero(
+        Vec_{{typename}} * const xs )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    if ( vec_{{funcname}}__last_is_zero( *xs ) ) {
+        vec_{{funcname}}__pop( xs );
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+{% endcall %}
+
+
 {% call typeclass('FROM_STR') %}
 
 

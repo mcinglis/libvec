@@ -1025,15 +1025,47 @@ vec_{{funcname}}__replaced(
 
 
 Vec_{{typename}}
-vec_{{funcname}}__view_str(
-        {{type}} * xs );
-// Returns a constant vec representation of the buffer `xs` terminated by
+vec_{{funcname}}__view_strm(
+        {{type}} * strm );
+// Returns a constant vec representation of the buffer `strm` terminated by
 // `{{funcname}}__zero()`.
 
 
 Vec_{{typename}}
 vec_{{funcname}}__copy_str(
-        {{type}} const * const xs );
+        {{type}} const * str );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copyc_str(
+        {{type}} const * str,
+        size_t capacity );
+
+
+void
+vec_{{funcname}}__extend_str(
+        Vec_{{typename}} * const xs,
+        {{type}} const * ext );
+
+
+bool
+vec_{{funcname}}__last_is_zero(
+        Vec_{{typename}} );
+
+
+{{type}} *
+vec_{{funcname}}__append_zero(
+        Vec_{{typename}} * );
+
+
+{{type}} *
+vec_{{funcname}}__term_zero(
+        Vec_{{typename}} * );
+
+
+bool
+vec_{{funcname}}__pop_zero(
+        Vec_{{typename}} * );
 
 
 {% endcall %}
