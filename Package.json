@@ -10,19 +10,27 @@
                     "https://gitorious.org/mcinglis/libmacro.git" ],
           "tag":  "v2.*"
         },
+        { "repo": [ "https://bitbucket.org/mcinglis/libmaybe.git",
+                    "https://github.com/mcinglis/libmaybe.git",
+                    "https://gitorious.org/mcinglis/libmaybe.git" ],
+          "tag":  "v1.*"
+        },
         { "repo": [ "https://bitbucket.org/mcinglis/libarray.git",
                     "https://github.com/mcinglis/libarray.git",
-                    "https://gitorious.org/mcinglis/libarray.git" ]
+                    "https://gitorious.org/mcinglis/libarray.git" ],
+          "tag":  "v2.*"
         },
         { "dev":  true,
           "repo": [ "https://bitbucket.org/mcinglis/tplrender.git",
                     "https://github.com/mcinglis/tplrender.git",
-                    "https://gitorious.org/mcinglis/tplrender.git" ]
+                    "https://gitorious.org/mcinglis/tplrender.git" ],
+          "tag":  "v1.*"
         },
         { "dev":  true,
           "repo": [ "https://bitbucket.org/mcinglis/libbase.git",
                     "https://github.com/mcinglis/libbase.git",
-                    "https://gitorious.org/mcinglis/libbase.git" ]
+                    "https://gitorious.org/mcinglis/libbase.git" ],
+          "tag":  "v1.*"
         }
     ],
     "commands": {

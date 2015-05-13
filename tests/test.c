@@ -4,8 +4,8 @@
 #include <libmacro/assert.h>
 #include <libbase/int.h>
 
-#include "../vec-int.h"
-#include "../vec-ptr-long.h"
+#include "../vec_int.h"
+#include "../vec_ptr_long.h"
 
 
 static
@@ -155,7 +155,7 @@ test_replace( void )
 {
     Vec_int const xs = VEC_INT( 3, 4, -8, 4, 4, 5, 4, -1 );
 
-    Vec_int const ys = vec_int__replaced( xs, 4, 6 );
+    Vec_int ys = vec_int__replaced( xs, 4, 6 );
     ASSERT( vec_int__equal( ys,
                 ( Vec_int ) VEC_INT( 3, 6, -8, 6, 6, 5, 6, -1 ) ) );
 
@@ -167,12 +167,12 @@ test_replace( void )
     ASSERT( vec_int__equal( ys,
                 ( Vec_int ) VEC_INT( 3, 6, 7, 6, 6, 0, 6, 7 ) ) );
 
-    Vec_int const zs = vec_int__replacedf( ys, int__is_zero, 1 );
+    Vec_int zs = vec_int__replacedf( ys, int__is_zero, 1 );
     ASSERT( vec_int__equal( zs,
                 ( Vec_int ) VEC_INT( 3, 6, 7, 6, 6, 1, 6, 7 ) ) );
 
-    vec_int__freev( ys );
-    vec_int__freev( zs );
+    vec_int__free( &ys );
+    vec_int__free( &zs );
 }
 
 
@@ -205,19 +205,19 @@ test_elem_or_append( void )
 {
     Vec_int xs = vec_int__new_els( 1, 2, 3 );
     int * const one = vec_int__elem_or_append( &xs, 1 );
-    ASSERT( one != NULL, *one == 1, one == vec_int__get_ptr( xs, 0 ),
+    ASSERT( one != NULL, *one == 1, one == vec_int__getp( xs, 0 ),
             vec_int__equal( xs, ( Vec_int ) VEC_INT( 1, 2, 3 ) ) );
     int * const two = vec_int__elem_or_append( &xs, 2 );
-    ASSERT( two != NULL, *two == 2, two == vec_int__get_ptr( xs, 1 ),
+    ASSERT( two != NULL, *two == 2, two == vec_int__getp( xs, 1 ),
             vec_int__equal( xs, ( Vec_int ) VEC_INT( 1, 2, 3 ) ) );
     int * const four = vec_int__elem_or_append( &xs, 4 );
-    ASSERT( four != NULL, *four == 4, four == vec_int__get_ptr( xs, 3 ),
+    ASSERT( four != NULL, *four == 4, four == vec_int__getp( xs, 3 ),
             vec_int__equal( xs, ( Vec_int ) VEC_INT( 1, 2, 3, 4 ) ) );
     int * const four2 = vec_int__elem_or_append( &xs, 4 );
-    ASSERT( four2 != NULL, *four2 == 4, four2 == vec_int__get_ptr( xs, 3 ),
+    ASSERT( four2 != NULL, *four2 == 4, four2 == vec_int__getp( xs, 3 ),
             vec_int__equal( xs, ( Vec_int ) VEC_INT( 1, 2, 3, 4 ) ) );
     int * const five = vec_int__elem_or_append( &xs, 5 );
-    ASSERT( five != NULL, *five == 5, five == vec_int__get_ptr( xs, 4 ),
+    ASSERT( five != NULL, *five == 5, five == vec_int__getp( xs, 4 ),
             vec_int__equal( xs, ( Vec_int ) VEC_INT( 1, 2, 3, 4, 5 ) ) );
     vec_int__free( &xs );
 }
@@ -228,7 +228,7 @@ void
 test_into( void )
 {
     Vec_int xs = vec_int__new_els( 1, 2, 3 );
-    Vec_int ys = vec_int__new_empty( 0 );
+    Vec_int ys = vec_int__new_alloc( 0 );
     vec_int__into_vec( xs, &ys );
     ASSERT( vec_int__equal( xs, ys ), xs.capacity == ys.capacity );
     vec_int__grow_capacity_by( &ys, 5 );
