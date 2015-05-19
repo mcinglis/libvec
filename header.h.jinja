@@ -87,8 +87,13 @@ vec_{{funcname}}__copy_vec(
 
 
 Vec_{{typename}}
-vec_{{funcname}}__copy_array(
-        Array_{{typename}} );
+vec_{{funcname}}__copy_arrayc(
+        ArrayC_{{typename}} );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy_arraym(
+        ArrayM_{{typename}} );
 
 
 Vec_{{typename}}
@@ -98,18 +103,24 @@ vec_{{funcname}}__copyc_vec(
 
 
 Vec_{{typename}}
-vec_{{funcname}}__copyc_array(
-        Array_{{typename}},
+vec_{{funcname}}__copyc_arrayc(
+        ArrayC_{{typename}},
         size_t capacity );
 
 
 Vec_{{typename}}
-vec_{{funcname}}__view_array(
-        Array_{{typename}} );
+vec_{{funcname}}__copyc_arraym(
+        ArrayM_{{typename}},
+        size_t capacity );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__view_arraym(
+        ArrayM_{{typename}} );
 
 
 void
-vec_{{funcname}}__memcpy_in(
+vec_{{funcname}}__memcpy_from(
         Vec_{{typename}} to,
         void const * from,
         size_t from_size );
@@ -140,17 +151,17 @@ vec_{{funcname}}__copy_into_vec_with(
 
 
 void
-vec_{{funcname}}__copy_into_array(
+vec_{{funcname}}__copy_into_arraym(
         Vec_{{typename}} from,
-        Array_{{typename}} to );
+        ArrayM_{{typename}} to );
 // Copies `n` elements from `from` to `to`, where `n` is the minimum of the
 // lengths of `from` and `to`.
 
 
 void
-vec_{{funcname}}__copy_into_array_with(
+vec_{{funcname}}__copy_into_arraym_with(
         Vec_{{typename}} from,
-        Array_{{typename}} to,
+        ArrayM_{{typename}} to,
         void ( * copier )( {{type}} from, {{type}} * to ) );
 // Calls `copier` (or byte-wise copy if null) with all the respective elements
 // in `from` and `to` up to the minimum lengths of `from` and `to`.
@@ -177,17 +188,17 @@ vec_{{funcname}}__into_vec_with(
 
 
 void
-vec_{{funcname}}__into_array(
+vec_{{funcname}}__into_arraym(
         Vec_{{typename}} from,
-        Array_{{typename}} * to );
+        ArrayM_{{typename}} * to );
 // Reallocates `to` to the length of `from`, and copies all elements from
 // `from` to `to`.
 
 
 void
-vec_{{funcname}}__into_array_with(
+vec_{{funcname}}__into_arraym_with(
         Vec_{{typename}} from,
-        Array_{{typename}} * to,
+        ArrayM_{{typename}} * to,
         void ( * copier )( {{type}} from, {{type}} * to ),
         void ( * freer )( {{type}} * unused_to ) );
 // Calls `freer` (if non-null) with all elements in `to` at indices past the
@@ -419,9 +430,15 @@ vec_{{funcname}}__empty_with(
 
 
 void
-vec_{{funcname}}__extend_array(
+vec_{{funcname}}__extend_arrayc(
         Vec_{{typename}} * xs,
-        Array_{{typename}} );
+        ArrayC_{{typename}} );
+
+
+void
+vec_{{funcname}}__extend_arraym(
+        Vec_{{typename}} * xs,
+        ArrayM_{{typename}} );
 
 
 void
@@ -431,8 +448,7 @@ vec_{{funcname}}__extend_vec(
 
 
 #define vec_{{funcname}}__extend_els( XS, ... ) \
-    vec_{{funcname}}__extend_array( \
-        XS, ( Array_{{typename}} ) ARRAY_{{macroname}}( __VA_ARGS__ ) )
+    vec_{{funcname}}__extend_arrayc( XS, ARRAYC_{{macroname}}( __VA_ARGS__ ) )
 
 
 {{type}}
@@ -680,7 +696,7 @@ vec_{{funcname}}__foldr1(
 {{type}} *
 vec_{{funcname}}__pick(
         Vec_{{typename}} xs,
-        bool ( * f )( {{type}} * pick, {{type}} x ) );
+        bool ( * f )( {{type}} const * pick, {{type}} x ) );
 
 
 bool
@@ -691,16 +707,16 @@ vec_{{funcname}}__equal_by(
 
 
 bool
-vec_{{funcname}}__equal_array_by(
+vec_{{funcname}}__equal_arrayc_by(
         Vec_{{typename}} xs,
-        Array_{{typename}} ys,
+        ArrayC_{{typename}} ys,
         bool ( * eq )( {{type}} x, {{type}} y ) );
 
 
 bool
 vec_{{funcname}}__has_prefix_by(
         Vec_{{typename}} xs,
-        Vec_{{typename}} ys,
+        ArrayC_{{typename}} ys,
         bool ( * eq )( {{type}} x, {{type}} y ) );
 // Returns the boolean that `ys` is a prefix of `xs` under the equality
 // function of `eq`.
@@ -709,7 +725,7 @@ vec_{{funcname}}__has_prefix_by(
 bool
 vec_{{funcname}}__has_suffix_by(
         Vec_{{typename}} xs,
-        Vec_{{typename}} ys,
+        ArrayC_{{typename}} ys,
         bool ( * eq )( {{type}} x, {{type}} y ) );
 // Returns the boolean that `ys` is a suffix of `xs` under the equality
 // function of `eq`.
@@ -718,7 +734,7 @@ vec_{{funcname}}__has_suffix_by(
 bool
 vec_{{funcname}}__has_infix_by(
         Vec_{{typename}} xs,
-        Vec_{{typename}} ys,
+        ArrayC_{{typename}} ys,
         bool ( * eq )( {{type}} x, {{type}} y ) );
 // Returns the boolean that `ys` is contained wholly and intact in `xs` under
 // the equality function of `eq`.
@@ -727,33 +743,38 @@ vec_{{funcname}}__has_infix_by(
 Maybe_size
 vec_{{funcname}}__infix_index_by(
         Vec_{{typename}} xs,
-        Vec_{{typename}} ys,
+        ArrayC_{{typename}} ys,
         bool ( * eq )( {{type}} x, {{type}} y ) );
-// If `ys` is contained wholly and intact in `xs` under the equality function
-// of `eq`, then returns the index at which `ys` begins within `xs`. Otherwise,
-// returns nothing.
+// Returns the first index in `xs` at which `ys` is a prefix under the equality
+// function of `eq`. If there's no such index, returns nothing.
 
 
-{{type}} *
-vec_{{funcname}}__infix_ptr_by(
+Maybe_size
+vec_{{funcname}}__last_infix_index_by(
         Vec_{{typename}} xs,
-        Vec_{{typename}} ys,
+        ArrayC_{{typename}} ys,
         bool ( * eq )( {{type}} x, {{type}} y ) );
-// If `ys` is contained wholly and intact in `xs` under the equality function
-// of `eq`, then returns the pointer at which `ys` begins within `xs`.
-// Otherwise, returns `NULL`.
+// Returns the last index in `xs` at which `ys` is a prefix under the equality
+// function of `eq`. If there's no such index, returns nothing.
 
 
 size_t
 vec_{{funcname}}__infix_count_by(
         Vec_{{typename}} xs,
-        Vec_{{typename}} ys,
+        ArrayC_{{typename}} ys,
         bool ( * eq )( {{type}} x, {{type}} y ) );
 // Returns the number of infixed occurences of `ys` in `xs`.
 
 
 bool
 vec_{{funcname}}__elem_by(
+        Vec_{{typename}} xs,
+        {{type}} y,
+        bool ( * eq )( {{type}} x, {{type}} y ) );
+
+
+Maybe_size
+vec_{{funcname}}__elem_index_by(
         Vec_{{typename}} xs,
         {{type}} y,
         bool ( * eq )( {{type}} x, {{type}} y ) );
@@ -767,7 +788,14 @@ vec_{{funcname}}__elem_ptr_by(
 
 
 Maybe_size
-vec_{{funcname}}__elem_index_by(
+vec_{{funcname}}__elem_last_index_by(
+        Vec_{{typename}} xs,
+        {{type}} y,
+        bool ( * eq )( {{type}} x, {{type}} y ) );
+
+
+{{type}} *
+vec_{{funcname}}__elem_last_ptr_by(
         Vec_{{typename}} xs,
         {{type}} y,
         bool ( * eq )( {{type}} x, {{type}} y ) );
@@ -889,23 +917,33 @@ vec_{{funcname}}__eachp_(
         ( struct vec_{{funcname}}__eachp__options ){ __VA_ARGS__ } )
 
 
-Array_{{typename}}
-array_{{funcname}}__view_vec(
+ArrayC_{{typename}}
+arrayc_{{funcname}}__view_vec(
         Vec_{{typename}} );
 
 
-Array_{{typename}}
-array_{{funcname}}__copy_vec(
+ArrayM_{{typename}}
+arraym_{{funcname}}__view_vec(
         Vec_{{typename}} );
 
 
-Array_{{typename}}
-array_{{funcname}}__view_vec_whole(
+ArrayM_{{typename}}
+arraym_{{funcname}}__copy_vec(
         Vec_{{typename}} );
 
 
-Array_{{typename}}
-array_{{funcname}}__copy_vec_whole(
+ArrayC_{{typename}}
+arrayc_{{funcname}}__view_vec_whole(
+        Vec_{{typename}} );
+
+
+ArrayM_{{typename}}
+arraym_{{funcname}}__view_vec_whole(
+        Vec_{{typename}} );
+
+
+ArrayM_{{typename}}
+arraym_{{funcname}}__copy_vec_whole(
         Vec_{{typename}} );
 
 
@@ -939,12 +977,6 @@ vec_{{funcname}}__not_equal(
         Vec_{{typename}} );
 
 
-bool
-vec_{{funcname}}__equal_array(
-        Vec_{{typename}},
-        Array_{{typename}} );
-
-
 #define vec_{{funcname}}__equal_els( XS, ... ) \
     vec_{{funcname}}__equal( \
         XS, ( Vec_{{typename}} ) VEC_{{macroname}}( __VA_ARGS__ ) )
@@ -974,8 +1006,8 @@ vec_{{funcname}}__infix_index(
         Vec_{{typename}} );
 
 
-{{type}} *
-vec_{{funcname}}__infix_ptr(
+Maybe_size
+vec_{{funcname}}__last_infix_index(
         Vec_{{typename}},
         Vec_{{typename}} );
 
@@ -992,6 +1024,12 @@ vec_{{funcname}}__elem(
         {{type}} );
 
 
+Maybe_size
+vec_{{funcname}}__elem_index(
+        Vec_{{typename}},
+        {{type}} );
+
+
 {{type}} *
 vec_{{funcname}}__elem_ptr(
         Vec_{{typename}},
@@ -999,7 +1037,13 @@ vec_{{funcname}}__elem_ptr(
 
 
 Maybe_size
-vec_{{funcname}}__elem_index(
+vec_{{funcname}}__elem_last_index(
+        Vec_{{typename}},
+        {{type}} );
+
+
+{{type}} *
+vec_{{funcname}}__elem_last_ptr(
         Vec_{{typename}},
         {{type}} );
 

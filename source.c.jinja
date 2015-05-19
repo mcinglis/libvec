@@ -98,8 +98,8 @@ vec_{{funcname}}__new(
     Vec_{{typename}} new = vec_{{funcname}}__new_alloc(
                                MAX( nlength, capacity ) );
     if ( errno ) { return ( Vec_{{typename}} ){ 0 }; }
-    vec_{{funcname}}__memcpy_in( new, elements,
-                                 size__mul( nlength, sizeof ( {{type}} ) ) );
+    vec_{{funcname}}__memcpy_from( new, elements,
+                                   size__mul( nlength, sizeof ( {{type}} ) ) );
     new.length = nlength;
     return new;
 }
@@ -154,12 +154,23 @@ vec_{{funcname}}__copy_vec(
 
 
 Vec_{{typename}}
-vec_{{funcname}}__copy_array(
-        Array_{{typename}} const xs )
+vec_{{funcname}}__copy_arrayc(
+        ArrayC_{{typename}} const xs )
 {
-    ASSERT( array_{{funcname}}__is_valid( xs ) );
+    ASSERT( arrayc_{{funcname}}__is_valid( xs ) );
 
     return vec_{{funcname}}__new( xs.e, xs.length, xs.length );
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy_arraym(
+        ArrayM_{{typename}} const xs )
+{
+    ASSERT( arraym_{{funcname}}__is_valid( xs ) );
+
+    return vec_{{funcname}}__copy_arrayc(
+               arrayc_{{funcname}}__view_arraym( xs ) );
 }
 
 
@@ -175,40 +186,51 @@ vec_{{funcname}}__copyc_vec(
 
 
 Vec_{{typename}}
-vec_{{funcname}}__copyc_array(
-        Array_{{typename}} const xs,
+vec_{{funcname}}__copyc_arrayc(
+        ArrayC_{{typename}} const xs,
         size_t const capacity )
 {
-    ASSERT( array_{{funcname}}__is_valid( xs ) );
+    ASSERT( arrayc_{{funcname}}__is_valid( xs ) );
 
     return vec_{{funcname}}__new( xs.e, xs.length, capacity );
 }
 
 
 Vec_{{typename}}
-vec_{{funcname}}__view_array(
-        Array_{{typename}} const xs )
+vec_{{funcname}}__copyc_arraym(
+        ArrayM_{{typename}} const xs,
+        size_t const capacity )
 {
-    ASSERT( array_{{funcname}}__is_valid( xs ) );
+    ASSERT( arraym_{{funcname}}__is_valid( xs ) );
+
+    return vec_{{funcname}}__copyc_arrayc(
+               arrayc_{{funcname}}__view_arraym( xs ), capacity );
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__view_arraym(
+        ArrayM_{{typename}} const xs )
+{
+    ASSERT( arraym_{{funcname}}__is_valid( xs ) );
 
     return ( Vec_{{typename}} ){
-        .e        = xs.e,
-        .length   = xs.length,
-        .capacity = xs.length
-    };
+               .e        = xs.e,
+               .length   = xs.length,
+               .capacity = xs.length };
 }
 
 
 void
-vec_{{funcname}}__memcpy_in(
+vec_{{funcname}}__memcpy_from(
         Vec_{{typename}} const to,
         void const * const from,
         size_t const from_size )
 {
     ASSERT( vec_{{funcname}}__is_valid( to ), from != NULL );
 
-    array_{{funcname}}__memcpy_in(
-        array_{{funcname}}__view_vec_whole( to ), from, from_size );
+    arraym_{{funcname}}__memcpy_from(
+        arraym_{{funcname}}__view_vec_whole( to ), from, from_size );
 }
 
 
@@ -220,8 +242,8 @@ vec_{{funcname}}__memcpy_to(
 {
     ASSERT( vec_{{funcname}}__is_valid( from ), to != NULL );
 
-    array_{{funcname}}__memcpy_to(
-        array_{{funcname}}__view_vec( from ), to, to_size );
+    arraym_{{funcname}}__memcpy_to(
+        arraym_{{funcname}}__view_vec( from ), to, to_size );
 }
 
 
@@ -246,34 +268,34 @@ vec_{{funcname}}__copy_into_vec_with(
     ASSERT( vec_{{funcname}}__is_valid( from ),
             vec_{{funcname}}__is_valid( to ) );
 
-    vec_{{funcname}}__copy_into_array_with(
-        from, array_{{funcname}}__view_vec( to ), copier );
+    vec_{{funcname}}__copy_into_arraym_with(
+        from, arraym_{{funcname}}__view_vec( to ), copier );
 }
 
 
 void
-vec_{{funcname}}__copy_into_array(
+vec_{{funcname}}__copy_into_arraym(
         Vec_{{typename}} const from,
-        Array_{{typename}} const to )
+        ArrayM_{{typename}} const to )
 {
     ASSERT( vec_{{funcname}}__is_valid( from ),
-            array_{{funcname}}__is_valid( to ) );
+            arraym_{{funcname}}__is_valid( to ) );
 
-    vec_{{funcname}}__copy_into_array_with( from, to, NULL );
+    vec_{{funcname}}__copy_into_arraym_with( from, to, NULL );
 }
 
 
 void
-vec_{{funcname}}__copy_into_array_with(
+vec_{{funcname}}__copy_into_arraym_with(
         Vec_{{typename}} const from,
-        Array_{{typename}} const to,
+        ArrayM_{{typename}} const to,
         void ( * const copier )( {{type}} from, {{type}} * to ) )
 {
     ASSERT( vec_{{funcname}}__is_valid( from ),
-            array_{{funcname}}__is_valid( to ) );
+            arraym_{{funcname}}__is_valid( to ) );
 
-    array_{{funcname}}__copy_into_array_with(
-        array_{{funcname}}__view_vec( from ), to, copier );
+    arraym_{{funcname}}__copy_into_arraym_with(
+        arraym_{{funcname}}__view_vec( from ), to, copier );
 }
 
 
@@ -303,37 +325,39 @@ vec_{{funcname}}__into_vec_with(
     vec_{{funcname}}__ensure_capacity( to, from.length );
     if ( errno ) { return; }
     to->length = from.length;
-    Array_{{typename}} to_array = array_{{funcname}}__view_vec( *to );
-    vec_{{funcname}}__into_array_with( from, &to_array, copier, freer );
+    ArrayM_{{typename}} to_array = arraym_{{funcname}}__view_vec( *to );
+    vec_{{funcname}}__into_arraym_with( from, &to_array, copier, freer );
+    // No reallocation of `to_array` will have occurred, because `to` and
+    // `from` are given the same lengths:
     ASSERT( to->e == to_array.e,
             to->length == to_array.length );
 }
 
 
 void
-vec_{{funcname}}__into_array(
+vec_{{funcname}}__into_arraym(
         Vec_{{typename}} const from,
-        Array_{{typename}} * const to )
+        ArrayM_{{typename}} * const to )
 {
     ASSERT( vec_{{funcname}}__is_valid( from ),
-            to != NULL, array_{{funcname}}__is_valid( *to ) );
+            to != NULL, arraym_{{funcname}}__is_valid( *to ) );
 
-    vec_{{funcname}}__into_array_with( from, to, NULL, NULL );
+    vec_{{funcname}}__into_arraym_with( from, to, NULL, NULL );
 }
 
 
 void
-vec_{{funcname}}__into_array_with(
+vec_{{funcname}}__into_arraym_with(
         Vec_{{typename}} const from,
-        Array_{{typename}} * const to,
+        ArrayM_{{typename}} * const to,
         void ( * const copier )( {{type}} from, {{type}} * to ),
         void ( * const freer )( {{type}} * unused_to ) )
 {
     ASSERT( vec_{{funcname}}__is_valid( from ),
-            to != NULL, array_{{funcname}}__is_valid( *to ) );
+            to != NULL, arraym_{{funcname}}__is_valid( *to ) );
 
-    array_{{funcname}}__into_array_with(
-            array_{{funcname}}__view_vec( from ), to, copier, freer );
+    arraym_{{funcname}}__into_arraym_with(
+            arraym_{{funcname}}__view_vec( from ), to, copier, freer );
 }
 
 
@@ -354,8 +378,8 @@ vec_{{funcname}}__realloc(
 {
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
 
-    Array_{{typename}} array = array_{{funcname}}__view_vec_whole( *xs );
-    array_{{funcname}}__realloc( &array, new_capacity );
+    ArrayM_{{typename}} array = arraym_{{funcname}}__view_vec_whole( *xs );
+    arraym_{{funcname}}__realloc( &array, new_capacity );
     *xs = ( Vec_{{typename}} ){
               .e        = array.e,
               .length   = MIN( xs->length, new_capacity ),
@@ -591,8 +615,8 @@ vec_{{funcname}}__get(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), index < xs.length );
 
-    return array_{{funcname}}__get(
-               array_{{funcname}}__view_vec( xs ), index );
+    return arraym_{{funcname}}__get(
+               arraym_{{funcname}}__view_vec( xs ), index );
 }
 
 
@@ -603,8 +627,8 @@ vec_{{funcname}}__getp(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ) );
 
-    return array_{{funcname}}__getp(
-               array_{{funcname}}__view_vec( xs ), index );
+    return arraym_{{funcname}}__getp(
+               arraym_{{funcname}}__view_vec( xs ), index );
 }
 
 
@@ -615,8 +639,8 @@ vec_{{funcname}}__getm(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ) );
 
-    return array_{{funcname}}__getm(
-               array_{{funcname}}__view_vec( xs ), index );
+    return arraym_{{funcname}}__getm(
+               arraym_{{funcname}}__view_vec( xs ), index );
 }
 
 
@@ -628,8 +652,8 @@ vec_{{funcname}}__set(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), index < xs.length );
 
-    return array_{{funcname}}__set(
-               array_{{funcname}}__view_vec( xs ), index, value );
+    return arraym_{{funcname}}__set(
+               arraym_{{funcname}}__view_vec( xs ), index, value );
 }
 
 
@@ -641,8 +665,8 @@ vec_{{funcname}}__setm(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), index < xs.length );
 
-    return array_{{funcname}}__setm(
-               array_{{funcname}}__view_vec( xs ), index, value );
+    return arraym_{{funcname}}__setm(
+               arraym_{{funcname}}__view_vec( xs ), index, value );
 }
 
 
@@ -653,8 +677,8 @@ vec_{{funcname}}__set_all(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ) );
 
-    array_{{funcname}}__set_all(
-        array_{{funcname}}__view_vec( xs ), value );
+    arraym_{{funcname}}__set_all(
+        arraym_{{funcname}}__view_vec( xs ), value );
 }
 
 
@@ -665,8 +689,8 @@ vec_{{funcname}}__set_first(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ) );
 
-    return array_{{funcname}}__set_first(
-               array_{{funcname}}__view_vec( xs ), value );
+    return arraym_{{funcname}}__set_first(
+               arraym_{{funcname}}__view_vec( xs ), value );
 }
 
 
@@ -677,8 +701,8 @@ vec_{{funcname}}__set_last(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ) );
 
-    return array_{{funcname}}__set_last(
-               array_{{funcname}}__view_vec( xs ), value );
+    return arraym_{{funcname}}__set_last(
+               arraym_{{funcname}}__view_vec( xs ), value );
 }
 
 
@@ -689,8 +713,8 @@ vec_{{funcname}}__memset(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ) );
 
-    array_{{funcname}}__memset(
-        array_{{funcname}}__view_vec( xs ), byte );
+    arraym_{{funcname}}__memset(
+        arraym_{{funcname}}__view_vec( xs ), byte );
 }
 
 
@@ -700,8 +724,8 @@ vec_{{funcname}}__memzero(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ) );
 
-    array_{{funcname}}__memzero(
-        array_{{funcname}}__view_vec( xs ) );
+    arraym_{{funcname}}__memzero(
+        arraym_{{funcname}}__view_vec( xs ) );
 }
 
 
@@ -712,8 +736,8 @@ vec_{{funcname}}__memset_whole(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ) );
 
-    array_{{funcname}}__memset(
-        array_{{funcname}}__view_vec_whole( xs ), byte );
+    arraym_{{funcname}}__memset(
+        arraym_{{funcname}}__view_vec_whole( xs ), byte );
 }
 
 
@@ -723,8 +747,8 @@ vec_{{funcname}}__memzero_whole(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ) );
 
-    array_{{funcname}}__memzero(
-        array_{{funcname}}__view_vec_whole( xs ) );
+    arraym_{{funcname}}__memzero(
+        arraym_{{funcname}}__view_vec_whole( xs ) );
 }
 
 
@@ -795,20 +819,34 @@ vec_{{funcname}}__empty_with(
 
 
 void
-vec_{{funcname}}__extend_array(
+vec_{{funcname}}__extend_arrayc(
         Vec_{{typename}} * const xs,
-        Array_{{typename}} const ext )
+        ArrayC_{{typename}} const ext )
 {
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
-            array_{{funcname}}__is_valid( ext ) );
+            arrayc_{{funcname}}__is_valid( ext ) );
 
     errno = 0;
     vec_{{funcname}}__grow_capacity_for( xs, ext.length );
     if ( errno ) { return; }
     for ( size_t i = 0; i < ext.length; i++ ) {
         vec_{{funcname}}__append( xs, ext.e[ i ] );
+        // No reallocation should occur for each append(), so no errors:
         ASSERT( errno == 0 );
     }
+}
+
+
+void
+vec_{{funcname}}__extend_arraym(
+        Vec_{{typename}} * const xs,
+        ArrayM_{{typename}} const ext )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            arraym_{{funcname}}__is_valid( ext ) );
+
+    vec_{{funcname}}__extend_arrayc(
+        xs, arrayc_{{funcname}}__view_arraym( ext ) );
 }
 
 
@@ -820,8 +858,8 @@ vec_{{funcname}}__extend_vec(
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
             vec_{{funcname}}__is_valid( ext ) );
 
-    vec_{{funcname}}__extend_array( xs,
-            array_{{funcname}}__view_vec( ext ) );
+    vec_{{funcname}}__extend_arrayc( xs,
+            arrayc_{{funcname}}__view_vec( ext ) );
 }
 
 
@@ -832,7 +870,7 @@ vec_{{funcname}}__first(
     ASSERT( vec_{{funcname}}__is_valid( xs ),
             vec_{{funcname}}__isnt_empty( xs ) );
 
-    return array_{{funcname}}__first( array_{{funcname}}__view_vec( xs ) );
+    return arrayc_{{funcname}}__first( arrayc_{{funcname}}__view_vec( xs ) );
 }
 
 
@@ -842,7 +880,7 @@ vec_{{funcname}}__firstp(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ) );
 
-    return array_{{funcname}}__firstp( array_{{funcname}}__view_vec( xs ) );
+    return arraym_{{funcname}}__firstp( arraym_{{funcname}}__view_vec( xs ) );
 }
 
 
@@ -852,7 +890,7 @@ vec_{{funcname}}__firstm(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ) );
 
-    return array_{{funcname}}__firstm( array_{{funcname}}__view_vec( xs ) );
+    return arrayc_{{funcname}}__firstm( arrayc_{{funcname}}__view_vec( xs ) );
 }
 
 
@@ -863,7 +901,7 @@ vec_{{funcname}}__last(
     ASSERT( vec_{{funcname}}__is_valid( xs ),
             vec_{{funcname}}__isnt_empty( xs ) );
 
-    return array_{{funcname}}__last( array_{{funcname}}__view_vec( xs ) );
+    return arrayc_{{funcname}}__last( arrayc_{{funcname}}__view_vec( xs ) );
 }
 
 
@@ -873,7 +911,7 @@ vec_{{funcname}}__lastp(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ) );
 
-    return array_{{funcname}}__lastp( array_{{funcname}}__view_vec( xs ) );
+    return arraym_{{funcname}}__lastp( arraym_{{funcname}}__view_vec( xs ) );
 }
 
 
@@ -883,7 +921,7 @@ vec_{{funcname}}__lastm(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ) );
 
-    return array_{{funcname}}__lastm( array_{{funcname}}__view_vec( xs ) );
+    return arrayc_{{funcname}}__lastm( arrayc_{{funcname}}__view_vec( xs ) );
 }
 
 
@@ -894,8 +932,8 @@ vec_{{funcname}}__count(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__count(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arrayc_{{funcname}}__count(
+               arrayc_{{funcname}}__view_vec( xs ), f );
 }
 
 
@@ -906,8 +944,8 @@ vec_{{funcname}}__count_first(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__count_first(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arrayc_{{funcname}}__count_first(
+               arrayc_{{funcname}}__view_vec( xs ), f );
 }
 
 
@@ -918,8 +956,8 @@ vec_{{funcname}}__count_last(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__count_last(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arrayc_{{funcname}}__count_last(
+               arrayc_{{funcname}}__view_vec( xs ), f );
 }
 
 
@@ -1097,8 +1135,8 @@ vec_{{funcname}}__find(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__find(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arrayc_{{funcname}}__find(
+               arrayc_{{funcname}}__view_vec( xs ), f );
 }
 
 
@@ -1109,8 +1147,8 @@ vec_{{funcname}}__find_not(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__find_not(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arrayc_{{funcname}}__find_not(
+               arrayc_{{funcname}}__view_vec( xs ), f );
 }
 
 
@@ -1121,8 +1159,8 @@ vec_{{funcname}}__find_last(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__find_last(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arrayc_{{funcname}}__find_last(
+               arrayc_{{funcname}}__view_vec( xs ), f );
 }
 
 
@@ -1133,8 +1171,8 @@ vec_{{funcname}}__find_last_not(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__find_last_not(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arrayc_{{funcname}}__find_last_not(
+               arrayc_{{funcname}}__view_vec( xs ), f );
 }
 
 
@@ -1145,8 +1183,8 @@ vec_{{funcname}}__findp(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__findp(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arraym_{{funcname}}__findp(
+               arraym_{{funcname}}__view_vec( xs ), f );
 }
 
 
@@ -1157,8 +1195,8 @@ vec_{{funcname}}__findp_not(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__findp_not(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arraym_{{funcname}}__findp_not(
+               arraym_{{funcname}}__view_vec( xs ), f );
 }
 
 
@@ -1169,8 +1207,8 @@ vec_{{funcname}}__findp_last(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__findp_last(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arraym_{{funcname}}__findp_last(
+               arraym_{{funcname}}__view_vec( xs ), f );
 }
 
 
@@ -1181,8 +1219,8 @@ vec_{{funcname}}__findp_last_not(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__findp_last_not(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arraym_{{funcname}}__findp_last_not(
+               arraym_{{funcname}}__view_vec( xs ), f );
 }
 
 
@@ -1193,8 +1231,8 @@ vec_{{funcname}}__findm(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__findm(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arrayc_{{funcname}}__findm(
+               arrayc_{{funcname}}__view_vec( xs ), f );
 }
 
 
@@ -1205,8 +1243,8 @@ vec_{{funcname}}__findm_not(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__findm_not(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arrayc_{{funcname}}__findm_not(
+               arrayc_{{funcname}}__view_vec( xs ), f );
 }
 
 
@@ -1217,8 +1255,8 @@ vec_{{funcname}}__findm_last(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__findm_last(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arrayc_{{funcname}}__findm_last(
+               arrayc_{{funcname}}__view_vec( xs ), f );
 }
 
 
@@ -1229,8 +1267,8 @@ vec_{{funcname}}__findm_last_not(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__findm_last_not(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arrayc_{{funcname}}__findm_last_not(
+               arrayc_{{funcname}}__view_vec( xs ), f );
 }
 
 
@@ -1241,8 +1279,8 @@ vec_{{funcname}}__any(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__any(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arrayc_{{funcname}}__any(
+               arrayc_{{funcname}}__view_vec( xs ), f );
 }
 
 
@@ -1253,8 +1291,8 @@ vec_{{funcname}}__all(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__all(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arrayc_{{funcname}}__all(
+               arrayc_{{funcname}}__view_vec( xs ), f );
 }
 
 
@@ -1265,8 +1303,8 @@ vec_{{funcname}}__only_one(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__only_one(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arrayc_{{funcname}}__only_one(
+               arrayc_{{funcname}}__view_vec( xs ), f );
 }
 
 
@@ -1277,8 +1315,8 @@ vec_{{funcname}}__all_but_one(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__all_but_one(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arrayc_{{funcname}}__all_but_one(
+               arrayc_{{funcname}}__view_vec( xs ), f );
 }
 
 
@@ -1290,8 +1328,8 @@ vec_{{funcname}}__foldl(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__foldl(
-               array_{{funcname}}__view_vec( xs ), init, f );
+    return arrayc_{{funcname}}__foldl(
+               arrayc_{{funcname}}__view_vec( xs ), init, f );
 }
 
 
@@ -1302,8 +1340,8 @@ vec_{{funcname}}__foldl1(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), xs.length > 0, f != NULL );
 
-    return array_{{funcname}}__foldl1(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arrayc_{{funcname}}__foldl1(
+               arrayc_{{funcname}}__view_vec( xs ), f );
 }
 
 
@@ -1315,8 +1353,8 @@ vec_{{funcname}}__foldr(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__foldr(
-               array_{{funcname}}__view_vec( xs ), init, f );
+    return arrayc_{{funcname}}__foldr(
+               arrayc_{{funcname}}__view_vec( xs ), init, f );
 }
 
 
@@ -1327,20 +1365,20 @@ vec_{{funcname}}__foldr1(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), xs.length > 0, f != NULL );
 
-    return array_{{funcname}}__foldr1(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arrayc_{{funcname}}__foldr1(
+               arrayc_{{funcname}}__view_vec( xs ), f );
 }
 
 
 {{type}} *
 vec_{{funcname}}__pick(
         Vec_{{typename}} const xs,
-        bool ( * const f )( {{type}} * pick, {{type}} x ) )
+        bool ( * const f )( {{type}} const * pick, {{type}} x ) )
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    return array_{{funcname}}__pick(
-               array_{{funcname}}__view_vec( xs ), f );
+    return arraym_{{funcname}}__pick(
+               arraym_{{funcname}}__view_vec( xs ), f );
 }
 
 
@@ -1354,125 +1392,115 @@ vec_{{funcname}}__equal_by(
             vec_{{funcname}}__is_valid( ys ),
             eq != NULL );
 
-    return vec_{{funcname}}__equal_array_by(
-               xs, array_{{funcname}}__view_vec( ys ), eq );
+    return arrayc_{{funcname}}__equal_by(
+               arrayc_{{funcname}}__view_vec( xs ),
+               arrayc_{{funcname}}__view_vec( ys ),
+               eq );
 }
 
 
 bool
-vec_{{funcname}}__equal_array_by(
+vec_{{funcname}}__equal_arrayc_by(
         Vec_{{typename}} const xs,
-        Array_{{typename}} const ys,
+        ArrayC_{{typename}} const ys,
         bool ( * const eq )( {{type}} x, {{type}} y ) )
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ),
-            array_{{funcname}}__is_valid( ys ),
+            arrayc_{{funcname}}__is_valid( ys ),
             eq != NULL );
 
-    return array_{{funcname}}__equal_by(
-               array_{{funcname}}__view_vec( xs ), ys, eq );
+    return arrayc_{{funcname}}__equal_by(
+               arrayc_{{funcname}}__view_vec( xs ), ys, eq );
 }
 
 
 bool
 vec_{{funcname}}__has_prefix_by(
         Vec_{{typename}} const xs,
-        Vec_{{typename}} const ys,
+        ArrayC_{{typename}} const ys,
         bool ( * const eq )( {{type}} x, {{type}} y ) )
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ),
-            vec_{{funcname}}__is_valid( ys ),
+            arrayc_{{funcname}}__is_valid( ys ),
             eq != NULL );
 
-    return array_{{funcname}}__has_prefix_by(
-               array_{{funcname}}__view_vec( xs ),
-               array_{{funcname}}__view_vec( ys ),
-               eq );
+    return arrayc_{{funcname}}__has_prefix_by(
+               arrayc_{{funcname}}__view_vec( xs ), ys, eq );
 }
 
 
 bool
 vec_{{funcname}}__has_suffix_by(
         Vec_{{typename}} const xs,
-        Vec_{{typename}} const ys,
+        ArrayC_{{typename}} const ys,
         bool ( * const eq )( {{type}} x, {{type}} y ) )
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ),
-            vec_{{funcname}}__is_valid( ys ),
+            arrayc_{{funcname}}__is_valid( ys ),
             eq != NULL );
 
-    return array_{{funcname}}__has_suffix_by(
-               array_{{funcname}}__view_vec( xs ),
-               array_{{funcname}}__view_vec( ys ),
-               eq );
+    return arrayc_{{funcname}}__has_suffix_by(
+               arrayc_{{funcname}}__view_vec( xs ), ys, eq );
 }
 
 
 bool
 vec_{{funcname}}__has_infix_by(
         Vec_{{typename}} const xs,
-        Vec_{{typename}} const ys,
+        ArrayC_{{typename}} const ys,
         bool ( * const eq )( {{type}} x, {{type}} y ) )
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ),
-            vec_{{funcname}}__is_valid( ys ),
+            arrayc_{{funcname}}__is_valid( ys ),
             eq != NULL );
 
-    return array_{{funcname}}__has_infix_by(
-               array_{{funcname}}__view_vec( xs ),
-               array_{{funcname}}__view_vec( ys ),
-               eq );
+    return arrayc_{{funcname}}__has_infix_by(
+               arrayc_{{funcname}}__view_vec( xs ), ys, eq );
 }
 
 
 Maybe_size
 vec_{{funcname}}__infix_index_by(
         Vec_{{typename}} const xs,
-        Vec_{{typename}} const ys,
+        ArrayC_{{typename}} const ys,
         bool ( * const eq )( {{type}} x, {{type}} y ) )
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ),
-            vec_{{funcname}}__is_valid( ys ),
+            arrayc_{{funcname}}__is_valid( ys ),
             eq != NULL );
 
-    return array_{{funcname}}__infix_index_by(
-               array_{{funcname}}__view_vec( xs ),
-               array_{{funcname}}__view_vec( ys ),
-               eq );
+    return arrayc_{{funcname}}__infix_index_by(
+               arrayc_{{funcname}}__view_vec( xs ), ys, eq );
 }
 
 
-{{type}} *
-vec_{{funcname}}__infix_ptr_by(
+Maybe_size
+vec_{{funcname}}__last_infix_index_by(
         Vec_{{typename}} const xs,
-        Vec_{{typename}} const ys,
+        ArrayC_{{typename}} const ys,
         bool ( * const eq )( {{type}} x, {{type}} y ) )
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ),
-            vec_{{funcname}}__is_valid( ys ),
+            arrayc_{{funcname}}__is_valid( ys ),
             eq != NULL );
 
-    return array_{{funcname}}__infix_ptr_by(
-               array_{{funcname}}__view_vec( xs ),
-               array_{{funcname}}__view_vec( ys ),
-               eq );
+    return arrayc_{{funcname}}__last_infix_index_by(
+               arrayc_{{funcname}}__view_vec( xs ), ys, eq );
 }
 
 
 size_t
 vec_{{funcname}}__infix_count_by(
         Vec_{{typename}} const xs,
-        Vec_{{typename}} const ys,
+        ArrayC_{{typename}} const ys,
         bool ( * const eq )( {{type}} x, {{type}} y ) )
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ),
-            vec_{{funcname}}__is_valid( ys ),
+            arrayc_{{funcname}}__is_valid( ys ),
             eq != NULL );
 
-    return array_{{funcname}}__infix_count_by(
-               array_{{funcname}}__view_vec( xs ),
-               array_{{funcname}}__view_vec( ys ),
-               eq );
+    return arrayc_{{funcname}}__infix_count_by(
+               arrayc_{{funcname}}__view_vec( xs ), ys, eq );
 }
 
 
@@ -1484,21 +1512,8 @@ vec_{{funcname}}__elem_by(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), eq != NULL );
 
-    return array_{{funcname}}__elem_by(
-               array_{{funcname}}__view_vec( xs ), y, eq );
-}
-
-
-{{type}} *
-vec_{{funcname}}__elem_ptr_by(
-        Vec_{{typename}} const xs,
-        {{type}} const y,
-        bool ( * const eq )( {{type}} x, {{type}} y ) )
-{
-    ASSERT( vec_{{funcname}}__is_valid( xs ), eq != NULL );
-
-    return array_{{funcname}}__elem_ptr_by(
-               array_{{funcname}}__view_vec( xs ), y, eq );
+    return arrayc_{{funcname}}__elem_by(
+               arrayc_{{funcname}}__view_vec( xs ), y, eq );
 }
 
 
@@ -1510,8 +1525,47 @@ vec_{{funcname}}__elem_index_by(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), eq != NULL );
 
-    return array_{{funcname}}__elem_index_by(
-               array_{{funcname}}__view_vec( xs ), y, eq );
+    return arrayc_{{funcname}}__elem_index_by(
+               arrayc_{{funcname}}__view_vec( xs ), y, eq );
+}
+
+
+{{type}} *
+vec_{{funcname}}__elem_ptr_by(
+        Vec_{{typename}} const xs,
+        {{type}} const y,
+        bool ( * const eq )( {{type}} x, {{type}} y ) )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), eq != NULL );
+
+    return arraym_{{funcname}}__elem_ptr_by(
+               arraym_{{funcname}}__view_vec( xs ), y, eq );
+}
+
+
+Maybe_size
+vec_{{funcname}}__elem_last_index_by(
+        Vec_{{typename}} const xs,
+        {{type}} const y,
+        bool ( * const eq )( {{type}} x, {{type}} y ) )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), eq != NULL );
+
+    return arrayc_{{funcname}}__elem_last_index_by(
+               arrayc_{{funcname}}__view_vec( xs ), y, eq );
+}
+
+
+{{type}} *
+vec_{{funcname}}__elem_last_ptr_by(
+        Vec_{{typename}} const xs,
+        {{type}} const y,
+        bool ( * const eq )( {{type}} x, {{type}} y ) )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), eq != NULL );
+
+    return arraym_{{funcname}}__elem_last_ptr_by(
+               arraym_{{funcname}}__view_vec( xs ), y, eq );
 }
 
 
@@ -1523,8 +1577,8 @@ vec_{{funcname}}__elem_count_by(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), eq != NULL );
 
-    return array_{{funcname}}__elem_count_by(
-               array_{{funcname}}__view_vec( xs ), y, eq );
+    return arrayc_{{funcname}}__elem_count_by(
+               arrayc_{{funcname}}__view_vec( xs ), y, eq );
 }
 
 
@@ -1553,8 +1607,8 @@ vec_{{funcname}}__replacef(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    array_{{funcname}}__replacef(
-        array_{{funcname}}__view_vec( xs ), f, repl );
+    arraym_{{funcname}}__replacef(
+        arraym_{{funcname}}__view_vec( xs ), f, repl );
 }
 
 
@@ -1583,8 +1637,8 @@ vec_{{funcname}}__replace_by(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), eq != NULL );
 
-    array_{{funcname}}__replace_by(
-        array_{{funcname}}__view_vec( xs ), el, repl, eq );
+    arraym_{{funcname}}__replace_by(
+        arraym_{{funcname}}__view_vec( xs ), el, repl, eq );
 }
 
 
@@ -1682,8 +1736,8 @@ vec_{{funcname}}__each_(
         Vec_{{typename}} const xs,
         struct vec_{{funcname}}__each__options const o )
 {
-    return array_{{funcname}}__each(
-               array_{{funcname}}__view_vec( xs ),
+    return arrayc_{{funcname}}__each(
+               arrayc_{{funcname}}__view_vec( xs ),
                .f = o.f, .b = o.b, .fi = o.fi, .bi = o.bi,
                .fv = o.fv, .bv = o.bv, .fvi = o.fvi, .bvi = o.bvi,
                .where = o.where, .where_not = o.where_not,
@@ -1696,8 +1750,8 @@ vec_{{funcname}}__eachp_(
         Vec_{{typename}} const xs,
         struct vec_{{funcname}}__eachp__options const o )
 {
-    return array_{{funcname}}__eachp(
-               array_{{funcname}}__view_vec( xs ),
+    return arraym_{{funcname}}__eachp(
+               arraym_{{funcname}}__view_vec( xs ),
                .f = o.f, .b = o.b, .fi = o.fi, .bi = o.bi,
                .fv = o.fv, .bv = o.bv, .fvi = o.fvi, .bvi = o.bvi,
                .where = o.where, .where_not = o.where_not,
@@ -1705,37 +1759,55 @@ vec_{{funcname}}__eachp_(
 }
 
 
-Array_{{typename}}
-array_{{funcname}}__view_vec(
+ArrayC_{{typename}}
+arrayc_{{funcname}}__view_vec(
         Vec_{{typename}} const xs )
 {
-    return ( Array_{{typename}} ){ .e = xs.e, .length = xs.length };
+    return arrayc_{{funcname}}__view_arraym(
+               arraym_{{funcname}}__view_vec( xs ) );
 }
 
 
-Array_{{typename}}
-array_{{funcname}}__copy_vec(
+ArrayM_{{typename}}
+arraym_{{funcname}}__view_vec(
         Vec_{{typename}} const xs )
 {
-    return array_{{funcname}}__copy_array(
-               array_{{funcname}}__view_vec( xs ) );
+    return ( ArrayM_{{typename}} ){ .e = xs.e, .length = xs.length };
 }
 
 
-Array_{{typename}}
-array_{{funcname}}__view_vec_whole(
+ArrayM_{{typename}}
+arraym_{{funcname}}__copy_vec(
         Vec_{{typename}} const xs )
 {
-    return ( Array_{{typename}} ){ .e = xs.e, .length = xs.capacity };
+    return arraym_{{funcname}}__copy_arraym(
+               arraym_{{funcname}}__view_vec( xs ) );
 }
 
 
-Array_{{typename}}
-array_{{funcname}}__copy_vec_whole(
+ArrayC_{{typename}}
+arrayc_{{funcname}}__view_vec_whole(
         Vec_{{typename}} const xs )
 {
-    return array_{{funcname}}__copy_array(
-               array_{{funcname}}__view_vec_whole( xs ) );
+    return arrayc_{{funcname}}__view_arraym(
+               arraym_{{funcname}}__view_vec_whole( xs ) );
+}
+
+
+ArrayM_{{typename}}
+arraym_{{funcname}}__view_vec_whole(
+        Vec_{{typename}} const xs )
+{
+    return ( ArrayM_{{typename}} ){ .e = xs.e, .length = xs.capacity };
+}
+
+
+ArrayM_{{typename}}
+arraym_{{funcname}}__copy_vec_whole(
+        Vec_{{typename}} const xs )
+{
+    return arraym_{{funcname}}__copy_arrayc(
+               arrayc_{{funcname}}__view_vec_whole( xs ) );
 }
 
 
@@ -1787,18 +1859,6 @@ vec_{{funcname}}__not_equal(
 
 
 bool
-vec_{{funcname}}__equal_array(
-        Vec_{{typename}} const xs,
-        Array_{{typename}} const ys )
-{
-    ASSERT( vec_{{funcname}}__is_valid( xs ),
-            array_{{funcname}}__is_valid( ys ) );
-
-    return array_{{funcname}}__equal( array_{{funcname}}__view_vec( xs ), ys );
-}
-
-
-bool
 vec_{{funcname}}__elem(
         Vec_{{typename}} const xs,
         {{type}} const y )
@@ -1806,6 +1866,17 @@ vec_{{funcname}}__elem(
     ASSERT( vec_{{funcname}}__is_valid( xs ) );
 
     return vec_{{funcname}}__elem_by( xs, y, equalf );
+}
+
+
+Maybe_size
+vec_{{funcname}}__elem_index(
+        Vec_{{typename}} const xs,
+        {{type}} const y )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+
+    return vec_{{funcname}}__elem_index_by( xs, y, equalf );
 }
 
 
@@ -1821,13 +1892,24 @@ vec_{{funcname}}__elem_ptr(
 
 
 Maybe_size
-vec_{{funcname}}__elem_index(
+vec_{{funcname}}__elem_last_index(
         Vec_{{typename}} const xs,
         {{type}} const y )
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ) );
 
-    return vec_{{funcname}}__elem_index_by( xs, y, equalf );
+    return vec_{{funcname}}__elem_last_index_by( xs, y, equalf );
+}
+
+
+{{type}} *
+vec_{{funcname}}__elem_last_ptr(
+        Vec_{{typename}} const xs,
+        {{type}} const y )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+
+    return vec_{{funcname}}__elem_last_ptr_by( xs, y, equalf );
 }
 
 
@@ -1900,8 +1982,8 @@ Vec_{{typename}}
 vec_{{funcname}}__view_strm(
         {{type}} * const xs )
 {
-    return vec_{{funcname}}__view_array(
-               array_{{funcname}}__view_strm( xs ) );
+    return vec_{{funcname}}__view_arraym(
+               arraym_{{funcname}}__view_strm( xs ) );
 }
 
 
@@ -1909,8 +1991,8 @@ Vec_{{typename}}
 vec_{{funcname}}__copy_str(
         {{type}} const * const xs )
 {
-    return vec_{{funcname}}__view_array(
-               array_{{funcname}}__copy_str( xs ) );
+    return vec_{{funcname}}__view_arraym(
+               arraym_{{funcname}}__copy_str( xs ) );
 }
 
 
