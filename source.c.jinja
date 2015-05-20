@@ -1958,20 +1958,18 @@ vec_{{funcname}}__replaced(
     return vec_{{funcname}}__replaced_by( xs, el, repl, equalf );
 }
 
-{% endcall %}
-
 
 {% call typeclass('NUM') %}
 
 
 static
 size_t
-strlen_null(
+buflen_null(
         {{type}} const * const xs )
 {
     if ( xs == NULL ) { return 0; }
     size_t count = 0;
-    while ( !{{funcname}}__equal( xs[ count ], {{funcname}}__zero() ) ) {
+    while ( !{{funcname}}__is_null( xs[ count ] ) ) {
         count++;
     }
     return count;
@@ -1979,96 +1977,96 @@ strlen_null(
 
 
 Vec_{{typename}}
-vec_{{funcname}}__view_strm(
-        {{type}} * const xs )
+vec_{{funcname}}__view_buf(
+        {{type}} * const buf )
 {
     return vec_{{funcname}}__view_arraym(
-               arraym_{{funcname}}__view_strm( xs ) );
+               arraym_{{funcname}}__view_buf( buf ) );
 }
 
 
 Vec_{{typename}}
-vec_{{funcname}}__copy_str(
-        {{type}} const * const xs )
+vec_{{funcname}}__copy_buf(
+        {{type}} const * const buf )
 {
     return vec_{{funcname}}__view_arraym(
-               arraym_{{funcname}}__copy_str( xs ) );
+               arraym_{{funcname}}__copy_buf( buf ) );
 }
 
 
 Vec_{{typename}}
-vec_{{funcname}}__copyc_str(
-        {{type}} const * const str,
+vec_{{funcname}}__copyc_buf(
+        {{type}} const * const buf,
         size_t const capacity )
 {
-    size_t const len = strlen_null( str );
+    size_t const len = buflen_null( buf );
     errno = 0;
     Vec_{{typename}} new = vec_{{funcname}}__new_alloc( MAX( len, capacity ) );
     if ( errno ) { return ( Vec_{{typename}} ){ 0 }; }
-    vec_{{funcname}}__extend_str( &new, str );
+    vec_{{funcname}}__extend_buf( &new, buf );
     return new;
 }
 
 
 void
-vec_{{funcname}}__extend_str(
-        Vec_{{typename}} * const xs,
-        {{type}} const * const ext )
+vec_{{funcname}}__extend_buf(
+        Vec_{{typename}} * const v,
+        {{type}} const * const buf )
 {
-    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+    ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ) );
 
-    size_t const len = strlen_null( ext );
+    size_t const len = buflen_null( buf );
     errno = 0;
-    vec_{{funcname}}__grow_capacity_for( xs, len );
+    vec_{{funcname}}__grow_capacity_for( v, len );
     if ( errno ) { return; }
     for ( size_t i = 0; i < len; i++ ) {
-        vec_{{funcname}}__append( xs, ext[ i ] );
+        vec_{{funcname}}__append( v, buf[ i ] );
         ASSERT( errno == 0 );
     }
 }
 
 
 bool
-vec_{{funcname}}__last_is_zero(
+vec_{{funcname}}__last_is_null(
         Vec_{{typename}} const xs )
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ) );
 
     {{type}} * const lastp = vec_{{funcname}}__lastp( xs );
-    return lastp != NULL && {{funcname}}__is_zero( *lastp );
+    return lastp != NULL && {{funcname}}__is_null( *lastp );
 }
 
 
 {{type}} *
-vec_{{funcname}}__append_zero(
+vec_{{funcname}}__append_null(
         Vec_{{typename}} * const xs )
 {
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
 
-    return vec_{{funcname}}__append( xs, {{funcname}}__zero() );
+    return vec_{{funcname}}__append( xs, {{funcname}}__null() );
 }
 
 
 {{type}} *
-vec_{{funcname}}__term_zero(
+vec_{{funcname}}__term_null(
         Vec_{{typename}} * const xs )
 {
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
 
-    if ( !vec_{{funcname}}__last_is_zero( *xs ) ) {
-        vec_{{funcname}}__append_zero( xs );
+    if ( !vec_{{funcname}}__last_is_null( *xs ) ) {
+        vec_{{funcname}}__append_null( xs );
     }
     return vec_{{funcname}}__lastp( *xs );
 }
 
 
 bool
-vec_{{funcname}}__pop_zero(
+vec_{{funcname}}__pop_null(
         Vec_{{typename}} * const xs )
 {
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
 
-    if ( vec_{{funcname}}__last_is_zero( *xs ) ) {
+    if ( vec_{{funcname}}__last_is_null( *xs ) ) {
         vec_{{funcname}}__pop( xs );
         return true;
     } else {
@@ -2078,6 +2076,8 @@ vec_{{funcname}}__pop_zero(
 
 
 {% endcall %}
+{% endcall %}
+
 
 
 {% call typeclass('FROM_STR') %}

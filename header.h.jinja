@@ -1074,57 +1074,56 @@ vec_{{funcname}}__replaced(
         {{type}} replacement );
 
 
-{% endcall %}
-
-
-{% call typeclass('NUM') %}
+{% call typeclass('NULL') %}
 
 
 Vec_{{typename}}
-vec_{{funcname}}__view_strm(
-        {{type}} * strm );
-// Returns a constant vec representation of the buffer `strm` terminated by
+vec_{{funcname}}__view_buf(
+        {{type}} * buf );
+// Returns a constant vector representation of the buffer `strm` terminated by
 // `{{funcname}}__zero()`.
 
 
 Vec_{{typename}}
-vec_{{funcname}}__copy_str(
-        {{type}} const * str );
+vec_{{funcname}}__copy_buf(
+        {{type}} const * buf );
 
 
 Vec_{{typename}}
-vec_{{funcname}}__copyc_str(
-        {{type}} const * str,
+vec_{{funcname}}__copyc_buf(
+        {{type}} const * buf,
         size_t capacity );
 
 
 void
-vec_{{funcname}}__extend_str(
+vec_{{funcname}}__extend_buf(
         Vec_{{typename}} * const xs,
-        {{type}} const * ext );
+        {{type}} const * buf );
 
 
 bool
-vec_{{funcname}}__last_is_zero(
+vec_{{funcname}}__last_is_null(
         Vec_{{typename}} );
 
 
 {{type}} *
-vec_{{funcname}}__append_zero(
+vec_{{funcname}}__append_null(
         Vec_{{typename}} * );
 
 
 {{type}} *
-vec_{{funcname}}__term_zero(
+vec_{{funcname}}__term_null(
         Vec_{{typename}} * );
 
 
 bool
-vec_{{funcname}}__pop_zero(
+vec_{{funcname}}__pop_null(
         Vec_{{typename}} * );
 
 
 {% endcall %}
+{% endcall %}
+
 
 
 {% call typeclass('FROM_STR') %}

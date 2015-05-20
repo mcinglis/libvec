@@ -27,14 +27,14 @@ libmaybe_types := $(libarray_types) size
 libbase_types  := $(libmaybe_types)
 
 int_type         := int
-int_options      := --typeclasses BOUNDED EQ ORD ENUM NUM FROM_STR \
+int_options      := --typeclasses NULL BOUNDED EQ ORD ENUM NUM FROM_STR \
                     --extra num_type=signed
 
 ptr_long_type    := long const *
-ptr_long_options := --typeclasses EQ ORD
+ptr_long_options := --typeclasses NULL EQ ORD
 
 size_type        := size_t
-size_options     := --typeclasses BOUNDED EQ ORD ENUM NUM FROM_STR \
+size_options     := --typeclasses NULL BOUNDED EQ ORD ENUM NUM FROM_STR \
                     --extra num_type=unsigned
 
 libbase_sources := $(foreach t,$(libbase_types),$(LIBBASE)/$t.c)
