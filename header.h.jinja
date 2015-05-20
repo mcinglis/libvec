@@ -77,12 +77,12 @@ vec_{{funcname}}__new_calloc(
 
 
 #define vec_{{funcname}}__new_els( ... ) \
-    vec_{{funcname}}__copy_vec( \
+    vec_{{funcname}}__copy( \
         ( Vec_{{typename}} ) VEC_{{macroname}}( __VA_ARGS__ ) )
 
 
 Vec_{{typename}}
-vec_{{funcname}}__copy_vec(
+vec_{{funcname}}__copy(
         Vec_{{typename}} );
 
 
