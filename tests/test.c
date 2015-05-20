@@ -57,7 +57,7 @@ test_vec_ptr_long( void )
                               &( long ){ 1 }, &( long ){ 2 },
                               &( long ){ 4 }, &( long ){ 8 } },
                           4, 4 );
-    Vec_ptr_long ys = vec_ptr_long__copy_vec( xs );
+    Vec_ptr_long ys = vec_ptr_long__copy( xs );
     Vec_ptr_long zs = vec_ptr_long__new(
                           ( long const * [] ){
                               &( long ){ 1 }, &( long ){ 2 },

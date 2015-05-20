@@ -1621,7 +1621,7 @@ vec_{{funcname}}__replacedf(
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
     errno = 0;
-    Vec_{{typename}} const new = vec_{{funcname}}__copy_vec( xs );
+    Vec_{{typename}} const new = vec_{{funcname}}__copy( xs );
     if ( errno ) { return ( Vec_{{typename}} ){ 0 }; }
     vec_{{funcname}}__replacef( new, f, repl );
     return new;
@@ -1652,7 +1652,7 @@ vec_{{funcname}}__replaced_by(
     ASSERT( vec_{{funcname}}__is_valid( xs ), eq != NULL );
 
     errno = 0;
-    Vec_{{typename}} const new = vec_{{funcname}}__copy_vec( xs );
+    Vec_{{typename}} const new = vec_{{funcname}}__copy( xs );
     if ( errno ) { return ( Vec_{{typename}} ){ 0 }; }
     vec_{{funcname}}__replace_by( new, el, repl, eq );
     return new;
@@ -1709,7 +1709,7 @@ vec_{{funcname}}__filtered(
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
     errno = 0;
-    Vec_{{typename}} new = vec_{{funcname}}__copy_vec( xs );
+    Vec_{{typename}} new = vec_{{funcname}}__copy( xs );
     if ( errno ) { return ( Vec_{{typename}} ){ 0 }; }
     vec_{{funcname}}__filter( &new, f );
     return new;
@@ -1724,7 +1724,7 @@ vec_{{funcname}}__filtered_not(
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
     errno = 0;
-    Vec_{{typename}} new = vec_{{funcname}}__copy_vec( xs );
+    Vec_{{typename}} new = vec_{{funcname}}__copy( xs );
     if ( errno ) { return ( Vec_{{typename}} ){ 0 }; }
     vec_{{funcname}}__filter_not( &new, f );
     return new;
