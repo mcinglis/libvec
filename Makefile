@@ -33,7 +33,7 @@ char_options     := --typeclasses NULL BOUNDED EQ ORD ENUM CHAR NUM FROM_STR \
 
 uchar_type       := uchar
 uchar_options    := --typeclasses NULL BOUNDED EQ ORD ENUM CHAR NUM FROM_STR \
-                    --extra num_type=signed
+                    --extra num_type=unsigned
 
 int_type         := int
 int_options      := --typeclasses NULL BOUNDED EQ ORD ENUM NUM FROM_STR \
