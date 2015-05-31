@@ -2,10 +2,14 @@
 #include <stdio.h>
 
 #include <libmacro/assert.h>
+#include <libmacro/slice.h>
 #include <libbase/int.h>
+#include <libarray/array_char.h>
 
 #include "../vec_int.h"
 #include "../vec_ptr_long.h"
+#include "../vec_char.h"
+#include "../vec_uchar.h"
 
 
 static
@@ -241,6 +245,180 @@ test_into( void )
 }
 
 
+static
+void
+test_null( void )
+{
+    {
+        int buf[] = { 1, 2, 3, 0 };
+        Vec_int const v = vec_int__view_buf( buf );
+        ASSERT( vec_int__equal_els( v, SLICE( buf, 0, 3 ) ),
+                vec_int__equal_buf( v, buf ),
+                !vec_int__equal_buf0( v, buf ) );
+    } {
+        int buf[] = { 0 };
+        Vec_int const v = vec_int__view_buf( buf );
+        ASSERT( vec_int__is_empty( v ),
+                vec_int__equal_buf( v, buf ),
+                !vec_int__equal_buf0( v, buf ) );
+    } {
+        int buf[] = { 1, 2, 3, 0 };
+        Vec_int const v = vec_int__view_buf0( buf );
+        ASSERT( vec_int__equal_els( v, SLICE( buf, 0, 4 ) ),
+                !vec_int__equal_buf( v, buf ),
+                vec_int__equal_buf0( v, buf ) );
+    } {
+        int buf[] = { 0 };
+        Vec_int const v = vec_int__view_buf0( buf );
+        ASSERT( vec_int__equal_els( v, buf[ 0 ] ),
+                !vec_int__equal_buf( v, buf ),
+                vec_int__equal_buf0( v, buf ) );
+    } {
+        char const * const buf = "test";
+        Vec_char v = vec_char__copy_buf( buf );
+        ASSERT( vec_char__equal_els( v, SLICE( buf, 0, 4 ) ),
+                vec_char__equal_buf( v, buf ),
+                !vec_char__equal_buf0( v, buf ) );
+        vec_char__free( &v );
+    } {
+        char const * const buf = "";
+        Vec_char v = vec_char__copy_buf( buf );
+        ASSERT( vec_char__is_empty( v ),
+                vec_char__equal_buf( v, buf ),
+                !vec_char__equal_buf0( v, buf ) );
+        vec_char__free( &v );
+    } {
+        char const * const buf = "test";
+        Vec_char v = vec_char__copy_buf0( buf );
+        ASSERT( vec_char__equal_els( v, SLICE( buf, 0, 5 ) ),
+                !vec_char__equal_buf( v, buf ),
+                vec_char__equal_buf0( v, buf ) );
+        vec_char__free( &v );
+    } {
+        char const * const buf = "";
+        Vec_char v = vec_char__copy_buf0( buf );
+        ASSERT( vec_char__equal_els( v, buf[ 0 ] ),
+                !vec_char__equal_buf( v, buf ),
+                vec_char__equal_buf0( v, buf ) );
+        vec_char__free( &v );
+    } {
+        size_t const c = 8;
+        int const buf[] = { 11, 22, 33, 0 };
+        Vec_int v = vec_int__copyc_buf( buf, c );
+        ASSERT( vec_int__equal_els( v, SLICE( buf, 0, 3 ) ),
+                v.capacity == c,
+                vec_int__equal_buf( v, buf ),
+                !vec_int__equal_buf0( v, buf ) );
+        vec_int__free( &v );
+    } {
+        size_t const c = 8;
+        int const buf[] = { 11, 22, 33, 0 };
+        Vec_int v = vec_int__copyc_buf0( buf, c );
+        ASSERT( vec_int__equal_els( v, SLICE( buf, 0, 4 ) ),
+                v.capacity == c,
+                !vec_int__equal_buf( v, buf ),
+                vec_int__equal_buf0( v, buf ) );
+        vec_int__free( &v );
+    } {
+        Vec_char v = vec_char__new_els( 'a', 'b', 'c' );
+        char const * const buf1 = "xyz";
+        vec_char__extend_buf( &v, buf1 );
+        ASSERT( vec_char__equal_els( v, SLICE( v.e, 0, 3 ),
+                                        SLICE( buf1, 0, 3 ) ),
+                vec_char__has_suffix( v, arrayc_char__view_buf( buf1 ) ) );
+        char const * const buf2 = "999";
+        vec_char__extend_buf( &v, buf2 );
+        ASSERT( vec_char__equal_els( v, SLICE( v.e, 0, 3 ),
+                                        SLICE( buf1, 0, 3 ),
+                                        SLICE( buf2, 0, 3 ) ),
+                vec_char__has_infix( v, arrayc_char__view_buf( buf1 ) ),
+                vec_char__has_suffix( v, arrayc_char__view_buf( buf2 ) ) );
+        vec_char__free( &v );
+    } {
+        Vec_char v = vec_char__new_els( 'a', 'b', 'c' );
+        char const * const buf1 = "xyz";
+        vec_char__extend_buf0( &v, buf1 );
+        ASSERT( vec_char__equal_els( v, SLICE( v.e, 0, 3 ),
+                                        SLICE( buf1, 0, 4 ) ),
+                vec_char__has_suffix( v, arrayc_char__view_buf0( buf1 ) ) );
+        char const * const buf2 = "999";
+        vec_char__extend_buf0( &v, buf2 );
+        ASSERT( vec_char__equal_els( v, SLICE( v.e, 0, 3 ),
+                                        SLICE( buf1, 0, 4 ),
+                                        SLICE( buf2, 0, 4 ) ),
+                vec_char__has_infix( v, arrayc_char__view_buf0( buf1 ) ),
+                vec_char__has_suffix( v, arrayc_char__view_buf0( buf2 ) ) );
+        vec_char__free( &v );
+    }
+}
+
+
+static
+void
+test_char( void )
+{
+    {
+        char const * const str = "hello";
+        Vec_uchar v = vec_uchar__copy_str( str );
+        ASSERT( vec_uchar__equal_els( v, SLICE( str, 0, 5 ) ),
+                vec_uchar__equal_str( v, str ),
+                !vec_uchar__equal_str0( v, str ) );
+        vec_uchar__free( &v );
+    } {
+        char const * const str = "";
+        Vec_uchar v = vec_uchar__copy_str( str );
+        ASSERT( vec_uchar__is_empty( v ),
+                vec_uchar__equal_str( v, str ),
+                !vec_uchar__equal_str0( v, str ) );
+        vec_uchar__free( &v );
+    } {
+        char const * const str = NULL;
+        Vec_uchar v = vec_uchar__copy_str( str );
+        ASSERT( vec_uchar__is_empty( v ),
+                vec_uchar__equal_str( v, str ),
+                vec_uchar__equal_str0( v, str ) );
+        vec_uchar__free( &v );
+    } {
+        char const * const str = "hello";
+        Vec_uchar v = vec_uchar__copy_str0( str );
+        ASSERT( vec_uchar__equal_els( v, SLICE( str, 0, 6 ) ),
+                !vec_uchar__equal_str( v, str ),
+                vec_uchar__equal_str0( v, str ) );
+        vec_uchar__free( &v );
+    } {
+        char const * const str = "";
+        Vec_uchar v = vec_uchar__copy_str0( str );
+        ASSERT( vec_uchar__equal_els( v, '\0' ),
+                !vec_uchar__equal_str( v, str ),
+                vec_uchar__equal_str0( v, str ) );
+        vec_uchar__free( &v );
+    } {
+        char const * const str = NULL;
+        Vec_uchar v = vec_uchar__copy_str0( str );
+        ASSERT( vec_uchar__is_empty( v ),
+                vec_uchar__equal_str( v, str ),
+                vec_uchar__equal_str0( v, str ) );
+        vec_uchar__free( &v );
+    } {
+        Vec_uchar v = vec_uchar__new_fmt( "blah %d test %s", 5, "hi" );
+        ASSERT( vec_uchar__equal_str( v, "blah 5 test hi" ) );
+        vec_uchar__free( &v );
+    } {
+        Vec_uchar v = vec_uchar__new_fmt( "%x %d %s", 0xf9, -3, "cool" );
+        ASSERT( vec_uchar__equal_str( v, "f9 -3 cool" ) );
+        vec_uchar__fmt_into( &v, "%s replacement", "some" );
+        ASSERT( vec_uchar__equal_str( v, "some replacement" ) );
+        vec_uchar__fmt_into( &v, "blah" );
+        ASSERT( vec_uchar__equal_str( v, "blah" ) );
+        vec_uchar__extend_fmt( &v, " %d %d %d", 1, 2, 3 );
+        ASSERT( vec_uchar__equal_str( v, "blah 1 2 3" ) );
+        vec_uchar__extend_fmt( &v, " %d", 4 );
+        ASSERT( vec_uchar__equal_str( v, "blah 1 2 3 4" ) );
+        vec_uchar__free( &v );
+    }
+}
+
+
 int
 main( void )
 {
@@ -265,6 +443,9 @@ main( void )
     printf( "  elem_or_append() tests passed\n" );
     test_into();
     printf( "  into() tests passed\n" );
+
+    test_null();        puts( "  NULL typeclass tests passed" );
+    test_char();        puts( "  CHAR typeclass tests passed" );
     printf( "All tests passed!\n" );
 }
 

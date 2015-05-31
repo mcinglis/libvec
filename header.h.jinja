@@ -47,6 +47,8 @@
 {% endfor %}
 
 
+
+
 bool
 vec_{{funcname}}__is_valid(
         Vec_{{typename}} );
@@ -948,21 +950,8 @@ arraym_{{funcname}}__copy_vec_whole(
 
 
 
-{% macro typeclass_header(name) -%}
-///////////////////////////////////
-/// TYPECLASS: {{name}}
-///////////////////////////////////
-{%- endmacro %}
 
-{% macro typeclass(name) -%}
-{% if name in typeclasses %}
-{{ typeclass_header(name) }}
-{{ caller() }}
-{% endif %}
-{%- endmacro %}
-
-
-{% call typeclass('EQ') %}
+{% if 'EQ' in typeclasses %}
 
 
 bool
@@ -983,39 +972,51 @@ vec_{{funcname}}__not_equal(
 
 
 bool
-vec_{{funcname}}__is_prefix(
+vec_{{funcname}}__first_is(
         Vec_{{typename}},
-        Vec_{{typename}} );
+        {{type}} el );
 
 
 bool
-vec_{{funcname}}__is_suffix(
+vec_{{funcname}}__last_is(
         Vec_{{typename}},
-        Vec_{{typename}} );
+        {{type}} el );
 
 
 bool
-vec_{{funcname}}__is_infix(
+vec_{{funcname}}__has_prefix(
         Vec_{{typename}},
-        Vec_{{typename}} );
+        ArrayC_{{typename}} prefix );
+
+
+bool
+vec_{{funcname}}__has_suffix(
+        Vec_{{typename}},
+        ArrayC_{{typename}} suffix );
+
+
+bool
+vec_{{funcname}}__has_infix(
+        Vec_{{typename}},
+        ArrayC_{{typename}} infix );
 
 
 Maybe_size
 vec_{{funcname}}__infix_index(
         Vec_{{typename}},
-        Vec_{{typename}} );
+        ArrayC_{{typename}} infix );
 
 
 Maybe_size
 vec_{{funcname}}__last_infix_index(
         Vec_{{typename}},
-        Vec_{{typename}} );
+        ArrayC_{{typename}} infix );
 
 
 size_t
 vec_{{funcname}}__infix_count(
         Vec_{{typename}},
-        Vec_{{typename}} );
+        ArrayC_{{typename}} infix );
 
 
 bool
@@ -1074,59 +1075,251 @@ vec_{{funcname}}__replaced(
         {{type}} replacement );
 
 
-{% call typeclass('NULL') %}
+{% endif %} {# EQ #}
+
+
+
+
+{% if 'NULL' in typeclasses %}
 
 
 Vec_{{typename}}
 vec_{{funcname}}__view_buf(
         {{type}} * buf );
-// Returns a constant vector representation of the buffer `strm` terminated by
-// `{{funcname}}__zero()`.
+// Returns a vector representation of the buffer `buf` terminated by
+// `{{funcname}}__null()`, not including that null terminator. If
+// `buffer == NULL`, returns an empty vector.
+
+
+Vec_{{typename}}
+vec_{{funcname}}__view_buf0(
+        {{type}} * buf );
+// Returns a vector representation of the buffer `buf` terminated by
+// `{{funcname}}__null()`, including that null terminator. If
+// `buffer == NULL`, returns an empty vector.
 
 
 Vec_{{typename}}
 vec_{{funcname}}__copy_buf(
         {{type}} const * buf );
+// Returns a vector copy representation of the buffer `buf` terminated by
+// `{{funcname}}__null()`, not including that null terminator. If
+// `buffer == NULL`, returns an empty vector.
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy_buf0(
+        {{type}} const * buf );
+// Returns a vector copy representation of the buffer `buf` terminated by
+// `{{funcname}}__null()`, including that null terminator. If
+// `buffer == NULL`, returns an empty vector.
 
 
 Vec_{{typename}}
 vec_{{funcname}}__copyc_buf(
         {{type}} const * buf,
         size_t capacity );
+// Returns a vector copy representation of the buffer `buf` terminated by
+// `{{funcname}}__null()`, not including that null terminator. The new vector
+// will have a minimum capacity of `capacity`; more if `buf` is larger. If
+// `buffer == NULL`, returns an empty vector.
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copyc_buf0(
+        {{type}} const * buf,
+        size_t capacity );
+// Returns a vector copy representation of the buffer `buf` terminated by
+// `{{funcname}}__null()`, including that null terminator. The new vector will
+// have a minimum capacity of `capacity`; more if `buf` is larger. If
+// `buffer == NULL`, returns an empty vector.
 
 
 void
 vec_{{funcname}}__extend_buf(
         Vec_{{typename}} * const xs,
         {{type}} const * buf );
+// Extends the vector `xs` with the elements of the null-terminated buffer
+// `buf`, not including the null terminator. If `buffer == NULL`, the vector is
+// unchanged.
+
+
+void
+vec_{{funcname}}__extend_buf0(
+        Vec_{{typename}} * const xs,
+        {{type}} const * buf );
+// Extends the vector `xs` with the elements of the null-terminated buffer
+// `buf`, including the null terminator. If `buffer == NULL`, the vector is
+// unchanged.
 
 
 bool
 vec_{{funcname}}__last_is_null(
         Vec_{{typename}} );
+// Returns the boolean that the given vector is non-empty and for the last
+// element `x`, `{{funcname}}__is_null( x )`.
+
+
+bool
+vec_{{funcname}}__all_null(
+        Vec_{{typename}} );
+// Equivalent to `vec_{{funcname}}__all( v, {{funcname}}__is_null )`.
 
 
 {{type}} *
 vec_{{funcname}}__append_null(
         Vec_{{typename}} * );
+// Equivalent to `vec_{{funcname}}__append( v, {{funcname}}__null() )`.
 
 
 {{type}} *
 vec_{{funcname}}__term_null(
         Vec_{{typename}} * );
+// If `!vec_{{funcname}}__last_is_null( *v )`, performs
+// `vec_{{funcname}}__append_null()`. Returns the pointer to the last element.
 
 
 bool
 vec_{{funcname}}__pop_null(
         Vec_{{typename}} * );
+// If `vec_{{funcname}}__last_is_null( *v )`, performs
+// `vec_{{funcname}}__pop()` and returns `true`. Otherwise, returns `false`.
 
 
-{% endcall %}
-{% endcall %}
+void
+vec_{{funcname}}__filter_null(
+        Vec_{{typename}} * );
+// Equivalent to `vec_{{funcname}}__filter( v, {{funcname}}__is_null )`.
+
+
+Vec_{{typename}}
+vec_{{funcname}}__filtered_null(
+        Vec_{{typename}} );
+// Equivalent to `vec_{{funcname}}__filtered( v, {{funcname}}__is_null )`.
+
+
+{% if 'EQ' in typeclasses %}
+
+
+bool
+vec_{{funcname}}__equal_buf(
+        Vec_{{typename}} vec,
+        {{type}} const * buf );
+
+
+bool
+vec_{{funcname}}__equal_buf0(
+        Vec_{{typename}} vec,
+        {{type}} const * buf );
+
+
+{% endif %} {# EQ #}
+{% endif %} {# NULL #}
 
 
 
-{% call typeclass('FROM_STR') %}
+
+{% if 'CHAR' in typeclasses %}
+
+
+#include <stdarg.h>
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy_str(
+        char const * str );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy_str0(
+        char const * str );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copyc_str(
+        char const * str,
+        size_t capacity );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copyc_str0(
+        char const * str,
+        size_t capacity );
+
+
+void
+vec_{{funcname}}__extend_str(
+        Vec_{{typename}} * vec,
+        char const * str );
+
+
+void
+vec_{{funcname}}__extend_str0(
+        Vec_{{typename}} * vec,
+        char const * str );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__new_fmt(
+        char const * format,
+        ... )
+#ifdef HAVE_ATTRIBUTE_FORMAT
+    __attribute__( ( format( printf, 1, 2 ) ) )
+#endif
+    ;
+
+
+void
+vec_{{funcname}}__fmt_into(
+        Vec_{{typename}} *,
+        char const * format,
+        ... )
+#ifdef HAVE_ATTRIBUTE_FORMAT
+    __attribute__( ( format( printf, 2, 3 ) ) )
+#endif
+    ;
+
+
+void
+vec_{{funcname}}__extend_fmt(
+        Vec_{{typename}} *,
+        char const * format,
+        ... )
+#ifdef HAVE_ATTRIBUTE_FORMAT
+    __attribute__( ( format( printf, 2, 3 ) ) )
+#endif
+    ;
+
+
+void
+vec_{{funcname}}__extend_fmtv(
+        Vec_{{typename}} *,
+        char const * format,
+        va_list ap );
+
+
+{% if 'EQ' in typeclasses %}
+
+
+bool
+vec_{{funcname}}__equal_str(
+        Vec_{{typename}},
+        char const * str );
+
+
+bool
+vec_{{funcname}}__equal_str0(
+        Vec_{{typename}},
+        char const * str );
+
+
+{% endif %} {# EQ #}
+{% endif %} {# CHAR #}
+
+
+
+
+{% if 'FROM_STR' in typeclasses %}
 
 
 void
@@ -1136,7 +1329,9 @@ vec_{{funcname}}__arg_parse(
         void * vec_ptr );
 
 
-{% endcall %}
+{% endif %}
+
+
 
 
 #endif // ifndef LIBVEC_VEC_{{macroname}}_H

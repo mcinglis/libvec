@@ -26,6 +26,12 @@
 // this file as-is.
 
 
+{% if 'CHAR' in typeclasses %}
+// For `vasprintf`:
+#define _GNU_SOURCE
+{% endif %}
+
+
 #include "vec_{{filename}}.h"
 
 #include <errno.h>
@@ -393,6 +399,7 @@ vec_{{funcname}}__grow_capacity(
 {
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
 
+    errno = 0;
     if ( xs->capacity == 0 ) {
         vec_{{funcname}}__realloc( xs, init_capacity );
     } else if ( xs->capacity == size__max_bound() ) {
@@ -411,6 +418,7 @@ vec_{{funcname}}__grow_capacity_by(
 {
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
 
+    errno = 0;
     if ( to_grow == 0 ) {
         return;
     } else if ( !size__can_add( xs->capacity, to_grow ) ) {
@@ -1812,21 +1820,9 @@ arraym_{{funcname}}__copy_vec_whole(
 
 
 
-{% macro typeclass_header(name) -%}
-///////////////////////////////////
-/// TYPECLASS: {{name}}
-///////////////////////////////////
-{%- endmacro %}
-
-{% macro typeclass(name) -%}
-{% if name in typeclasses %}
-{{ typeclass_header(name) }}
-{{ caller() }}
-{% endif %}
-{%- endmacro %}
 
 
-{% call typeclass('EQ') %}
+{% if 'EQ' in typeclasses %}
 
 
 static
@@ -1845,6 +1841,9 @@ vec_{{funcname}}__equal(
         Vec_{{typename}} const xs,
         Vec_{{typename}} const ys )
 {
+    ASSERT( vec_{{funcname}}__is_valid( xs ),
+            vec_{{funcname}}__is_valid( ys ) );
+
     return vec_{{funcname}}__equal_by( xs, ys, equalf );
 }
 
@@ -1854,7 +1853,106 @@ vec_{{funcname}}__not_equal(
         Vec_{{typename}} const xs,
         Vec_{{typename}} const ys )
 {
+    ASSERT( vec_{{funcname}}__is_valid( xs ),
+            vec_{{funcname}}__is_valid( ys ) );
+
     return !vec_{{funcname}}__equal( xs, ys );
+}
+
+
+bool
+vec_{{funcname}}__first_is(
+        Vec_{{typename}} const v,
+        {{type}} const el )
+{
+    ASSERT( vec_{{funcname}}__is_valid( v ) );
+
+    return arrayc_{{funcname}}__first_is(
+               arrayc_{{funcname}}__view_vec( v ), el );
+}
+
+
+bool
+vec_{{funcname}}__last_is(
+        Vec_{{typename}} const v,
+        {{type}} const el )
+{
+    ASSERT( vec_{{funcname}}__is_valid( v ) );
+
+    return arrayc_{{funcname}}__last_is(
+               arrayc_{{funcname}}__view_vec( v ), el );
+}
+
+
+bool
+vec_{{funcname}}__has_prefix(
+        Vec_{{typename}} const v,
+        ArrayC_{{typename}} const prefix )
+{
+    ASSERT( vec_{{funcname}}__is_valid( v ),
+            arrayc_{{funcname}}__is_valid( prefix ) );
+
+    return vec_{{funcname}}__has_prefix_by( v, prefix, equalf );
+}
+
+
+bool
+vec_{{funcname}}__has_suffix(
+        Vec_{{typename}} const v,
+        ArrayC_{{typename}} const suffix )
+{
+    ASSERT( vec_{{funcname}}__is_valid( v ),
+            arrayc_{{funcname}}__is_valid( suffix ) );
+
+    return vec_{{funcname}}__has_suffix_by( v, suffix, equalf );
+}
+
+
+bool
+vec_{{funcname}}__has_infix(
+        Vec_{{typename}} const v,
+        ArrayC_{{typename}} const infix )
+{
+    ASSERT( vec_{{funcname}}__is_valid( v ),
+            arrayc_{{funcname}}__is_valid( infix ) );
+
+    return vec_{{funcname}}__has_infix_by( v, infix, equalf );
+}
+
+
+Maybe_size
+vec_{{funcname}}__infix_index(
+        Vec_{{typename}} const v,
+        ArrayC_{{typename}} const infix )
+{
+    ASSERT( vec_{{funcname}}__is_valid( v ),
+            arrayc_{{funcname}}__is_valid( infix ) );
+
+    return vec_{{funcname}}__infix_index_by( v, infix, equalf );
+}
+
+
+Maybe_size
+vec_{{funcname}}__last_infix_index(
+        Vec_{{typename}} const v,
+        ArrayC_{{typename}} const infix )
+{
+    ASSERT( vec_{{funcname}}__is_valid( v ),
+            arrayc_{{funcname}}__is_valid( infix ) );
+
+    return vec_{{funcname}}__last_infix_index_by( v, infix, equalf );
+}
+
+
+size_t
+vec_{{funcname}}__infix_count(
+        Vec_{{typename}} const v,
+        ArrayC_{{typename}} const infix )
+{
+    ASSERT( vec_{{funcname}}__is_valid( v ),
+            arrayc_{{funcname}}__is_valid( infix ) );
+
+    return vec_{{funcname}}__infix_count_by( v, infix, equalf );
 }
 
 
@@ -1959,21 +2057,12 @@ vec_{{funcname}}__replaced(
 }
 
 
-{% call typeclass('NUM') %}
+{% endif %} {# EQ #}
 
 
-static
-size_t
-buflen_null(
-        {{type}} const * const xs )
-{
-    if ( xs == NULL ) { return 0; }
-    size_t count = 0;
-    while ( !{{funcname}}__is_null( xs[ count ] ) ) {
-        count++;
-    }
-    return count;
-}
+
+
+{% if 'NULL' in typeclasses %}
 
 
 Vec_{{typename}}
@@ -1982,6 +2071,15 @@ vec_{{funcname}}__view_buf(
 {
     return vec_{{funcname}}__view_arraym(
                arraym_{{funcname}}__view_buf( buf ) );
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__view_buf0(
+        {{type}} * const buf )
+{
+    return vec_{{funcname}}__view_arraym(
+               arraym_{{funcname}}__view_buf0( buf ) );
 }
 
 
@@ -1995,16 +2093,31 @@ vec_{{funcname}}__copy_buf(
 
 
 Vec_{{typename}}
+vec_{{funcname}}__copy_buf0(
+        {{type}} const * const buf )
+{
+    return vec_{{funcname}}__view_arraym(
+               arraym_{{funcname}}__copy_buf0( buf ) );
+}
+
+
+Vec_{{typename}}
 vec_{{funcname}}__copyc_buf(
         {{type}} const * const buf,
         size_t const capacity )
 {
-    size_t const len = buflen_null( buf );
-    errno = 0;
-    Vec_{{typename}} new = vec_{{funcname}}__new_alloc( MAX( len, capacity ) );
-    if ( errno ) { return ( Vec_{{typename}} ){ 0 }; }
-    vec_{{funcname}}__extend_buf( &new, buf );
-    return new;
+    return vec_{{funcname}}__copyc_arrayc(
+               arrayc_{{funcname}}__view_buf( buf ), capacity );
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copyc_buf0(
+        {{type}} const * const buf,
+        size_t const capacity )
+{
+    return vec_{{funcname}}__copyc_arrayc(
+               arrayc_{{funcname}}__view_buf0( buf ), capacity );
 }
 
 
@@ -2015,59 +2128,76 @@ vec_{{funcname}}__extend_buf(
 {
     ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ) );
 
-    size_t const len = buflen_null( buf );
-    errno = 0;
-    vec_{{funcname}}__grow_capacity_for( v, len );
-    if ( errno ) { return; }
-    for ( size_t i = 0; i < len; i++ ) {
-        vec_{{funcname}}__append( v, buf[ i ] );
-        ASSERT( errno == 0 );
-    }
+    vec_{{funcname}}__extend_arrayc(
+        v, arrayc_{{funcname}}__view_buf( buf ) );
+}
+
+
+void
+vec_{{funcname}}__extend_buf0(
+        Vec_{{typename}} * const v,
+        {{type}} const * const buf )
+{
+    ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ) );
+
+    vec_{{funcname}}__extend_arrayc(
+        v, arrayc_{{funcname}}__view_buf0( buf ) );
 }
 
 
 bool
 vec_{{funcname}}__last_is_null(
-        Vec_{{typename}} const xs )
+        Vec_{{typename}} const v )
 {
-    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+    ASSERT( vec_{{funcname}}__is_valid( v ) );
 
-    {{type}} * const lastp = vec_{{funcname}}__lastp( xs );
-    return lastp != NULL && {{funcname}}__is_null( *lastp );
+    return arrayc_{{funcname}}__last_is_null(
+               arrayc_{{funcname}}__view_vec( v ) );
+}
+
+
+bool
+vec_{{funcname}}__all_null(
+        Vec_{{typename}} const v )
+{
+    ASSERT( vec_{{funcname}}__is_valid( v ) );
+
+    return arrayc_{{funcname}}__all_null(
+               arrayc_{{funcname}}__view_vec( v ) );
 }
 
 
 {{type}} *
 vec_{{funcname}}__append_null(
-        Vec_{{typename}} * const xs )
+        Vec_{{typename}} * const v )
 {
-    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+    ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ) );
 
-    return vec_{{funcname}}__append( xs, {{funcname}}__null() );
+    return vec_{{funcname}}__append( v, {{funcname}}__null() );
 }
 
 
 {{type}} *
 vec_{{funcname}}__term_null(
-        Vec_{{typename}} * const xs )
+        Vec_{{typename}} * const v )
 {
-    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+    ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ) );
 
-    if ( !vec_{{funcname}}__last_is_null( *xs ) ) {
-        vec_{{funcname}}__append_null( xs );
+    if ( !vec_{{funcname}}__last_is_null( *v ) ) {
+        vec_{{funcname}}__append_null( v );
     }
-    return vec_{{funcname}}__lastp( *xs );
+    return vec_{{funcname}}__lastp( *v );
 }
 
 
 bool
 vec_{{funcname}}__pop_null(
-        Vec_{{typename}} * const xs )
+        Vec_{{typename}} * const v )
 {
-    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+    ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ) );
 
-    if ( vec_{{funcname}}__last_is_null( *xs ) ) {
-        vec_{{funcname}}__pop( xs );
+    if ( vec_{{funcname}}__last_is_null( *v ) ) {
+        vec_{{funcname}}__pop( v );
         return true;
     } else {
         return false;
@@ -2075,12 +2205,266 @@ vec_{{funcname}}__pop_null(
 }
 
 
-{% endcall %}
-{% endcall %}
+void
+vec_{{funcname}}__filter_null(
+        Vec_{{typename}} * const v )
+{
+    ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ) );
+
+    vec_{{funcname}}__filter( v, {{funcname}}__is_null );
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__filtered_null(
+        Vec_{{typename}} const v )
+{
+    ASSERT( vec_{{funcname}}__is_valid( v ) );
+
+    return vec_{{funcname}}__filtered( v, {{funcname}}__is_null );
+}
+
+
+{% if 'EQ' in typeclasses %}
+
+
+bool
+vec_{{funcname}}__equal_buf(
+        Vec_{{typename}} const vec,
+        {{type}} const * const buf )
+{
+    ASSERT( vec_{{funcname}}__is_valid( vec ) );
+
+    return arrayc_{{funcname}}__equal(
+               arrayc_{{funcname}}__view_vec( vec ),
+               arrayc_{{funcname}}__view_buf( buf ) );
+}
+
+
+bool
+vec_{{funcname}}__equal_buf0(
+        Vec_{{typename}} const vec,
+        {{type}} const * const buf )
+{
+    ASSERT( vec_{{funcname}}__is_valid( vec ) );
+
+    return arrayc_{{funcname}}__equal(
+               arrayc_{{funcname}}__view_vec( vec ),
+               arrayc_{{funcname}}__view_buf0( buf ) );
+}
+
+
+{% endif %} {# EQ #}
+{% endif %} {# NULL #}
 
 
 
-{% call typeclass('FROM_STR') %}
+
+{% if 'CHAR' in typeclasses %}
+
+
+#include <stdarg.h>
+#include <stdio.h>
+
+#include <libstr/str.h>
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy_str(
+        char const * const str )
+{
+    return vec_{{funcname}}__view_arraym(
+               arraym_{{funcname}}__copy_str( str ) );
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy_str0(
+        char const * const str )
+{
+    return vec_{{funcname}}__view_arraym(
+               arraym_{{funcname}}__copy_str0( str ) );
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copyc_str(
+        char const * const str,
+        size_t const capacity )
+{
+    size_t const len = str__length( str );
+    Vec_{{typename}} vec = vec_{{funcname}}__new_alloc( MAX( len, capacity ) );
+    if ( errno ) { return vec; }
+    vec_{{funcname}}__extend_str( &vec, str );
+    return vec;
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copyc_str0(
+        char const * const str,
+        size_t const capacity )
+{
+    size_t const sz = str__size( str );
+    Vec_{{typename}} vec = vec_{{funcname}}__new_alloc( MAX( sz, capacity ) );
+    if ( errno ) { return vec; }
+    vec_{{funcname}}__extend_str0( &vec, str );
+    return vec;
+}
+
+
+void
+vec_{{funcname}}__extend_str(
+        Vec_{{typename}} * const v,
+        char const * const str )
+{
+    ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ) );
+
+    errno = 0;
+    size_t const len = str__length( str );
+    vec_{{funcname}}__grow_capacity_for( v, len );
+    if ( errno ) { return; }
+    for ( size_t i = 0; i < len; i++ ) {
+        vec_{{funcname}}__append( v, {{funcname}}__from_char( str[ i ] ) );
+        if ( errno ) { return; }
+    }
+}
+
+
+void
+vec_{{funcname}}__extend_str0(
+        Vec_{{typename}} * const v,
+        char const * const str )
+{
+    ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ) );
+
+    errno = 0;
+    size_t const sz = str__size( str );
+    vec_{{funcname}}__grow_capacity_for( v, sz );
+    if ( errno ) { return; }
+    for ( size_t i = 0; i < sz; i++ ) {
+        vec_{{funcname}}__append( v, {{funcname}}__from_char( str[ i ] ) );
+        if ( errno ) { return; }
+    }
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__new_fmt(
+        char const * const format,
+        ... )
+{
+    ASSERT( format != NULL );
+
+    Vec_{{typename}} v = ( Vec_{{typename}} ){ 0 };
+    va_list ap;
+    va_start( ap, format );
+    errno = 0;
+    vec_{{funcname}}__extend_fmtv( &v, format, ap );
+    int const err = errno;
+    va_end( ap );
+    if ( err ) { errno = err; }
+    return v;
+}
+
+
+void
+vec_{{funcname}}__fmt_into(
+        Vec_{{typename}} * const v,
+        char const * const format,
+        ... )
+{
+    ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ),
+            format != NULL );
+
+    va_list ap;
+    va_start( ap, format );
+    vec_{{funcname}}__empty( v );
+    errno = 0;
+    vec_{{funcname}}__extend_fmtv( v, format, ap );
+    int const err = errno;
+    va_end( ap );
+    if ( err ) { errno = err; }
+}
+
+
+void
+vec_{{funcname}}__extend_fmt(
+        Vec_{{typename}} * const v,
+        char const * const format,
+        ... )
+{
+    ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ),
+            format != NULL );
+
+    va_list ap;
+    va_start( ap, format );
+    errno = 0;
+    vec_{{funcname}}__extend_fmtv( v, format, ap );
+    int const err = errno;
+    va_end( ap );
+    if ( err ) { errno = err; }
+}
+
+
+void
+vec_{{funcname}}__extend_fmtv(
+        Vec_{{typename}} * const v,
+        char const * const format,
+        va_list ap )
+{
+    ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ) );
+
+    if ( format == NULL ) { return; }
+    char * ext;
+    errno = 0;
+    // TODO: asprintf is a non-standard GNU/BSD extension to libc; replace
+    int const r = vasprintf( &ext, format, ap );
+    if ( r < 0 && errno == 0 ) {
+        errno = EIO;
+    }
+    if ( errno ) { return; }
+    vec_{{funcname}}__extend_str( v, ext );
+    int const extend_err = errno;
+    free( ext );
+    if ( extend_err ) { errno = extend_err; }
+}
+
+
+{% if 'EQ' in typeclasses %}
+
+
+bool
+vec_{{funcname}}__equal_str(
+        Vec_{{typename}} const v,
+        char const * const str )
+{
+    ASSERT( vec_{{funcname}}__is_valid( v ) );
+
+    return arrayc_{{funcname}}__equal_str(
+               arrayc_{{funcname}}__view_vec( v ), str );
+}
+
+
+bool
+vec_{{funcname}}__equal_str0(
+        Vec_{{typename}} const v,
+        char const * const str )
+{
+    ASSERT( vec_{{funcname}}__is_valid( v ) );
+
+    return arrayc_{{funcname}}__equal_str0(
+               arrayc_{{funcname}}__view_vec( v ), str );
+}
+
+
+{% endif %} {# EQ #}
+{% endif %} {# CHAR #}
+
+
+
+
+{% if 'FROM_STR' in typeclasses %}
 
 
 void
@@ -2099,5 +2483,5 @@ vec_{{funcname}}__arg_parse(
 }
 
 
-{% endcall %}
+{% endif %}
 

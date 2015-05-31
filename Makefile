@@ -5,6 +5,7 @@
 
 DEPS_DIR ?= ./deps
 
+LIBSTR   ?= $(DEPS_DIR)/libstr
 LIBBASE  ?= $(DEPS_DIR)/libbase
 LIBMAYBE ?= $(DEPS_DIR)/libmaybe
 LIBARRAY ?= $(DEPS_DIR)/libarray
@@ -21,10 +22,18 @@ CFLAGS ?= -std=c11 -g \
 TPLRENDER ?= $(DEPS_DIR)/tplrender/tplrender
 
 
-libvec_types   := int ptr_long
+libvec_types   := char uchar int ptr_long
 libarray_types := $(libvec_types)
 libmaybe_types := $(libarray_types) size
 libbase_types  := $(libmaybe_types)
+
+char_type        := char
+char_options     := --typeclasses NULL BOUNDED EQ ORD ENUM CHAR NUM FROM_STR \
+                    --extra num_type=signed
+
+uchar_type       := uchar
+uchar_options    := --typeclasses NULL BOUNDED EQ ORD ENUM CHAR NUM FROM_STR \
+                    --extra num_type=signed
 
 int_type         := int
 int_options      := --typeclasses NULL BOUNDED EQ ORD ENUM NUM FROM_STR \
@@ -105,7 +114,7 @@ clean:
 	$(CC) $(CFLAGS) $(CPPFLAGS) -MMD -MF "$(@:.o=.dep.mk)" -c $< -o $@
 
 
-tests/test: $(gen_objects)
+tests/test: $(gen_objects) $(LIBSTR)/str.o
 
 
 $(libbase_headers): $(LIBBASE)/%.h: $(LIBBASE)/header.h.jinja
