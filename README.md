@@ -1,25 +1,27 @@
 
-**Libvec** defines vector (i.e. dynamic array) types and functions for the standard types.
+**Libvec** provides Jinja templates that can be rendered to C source files providing vector types and functions. A `Vec_*` type can be generated for any type that provides a small set of functions following a standard naming prefix convention.
 
-Each header file is generated from [`header.h.jinja`](header.h.jinja), and each source file is generated from [`source.c.jinja`](source.c.jinja) (requiring Python 2). You can easily adapt the build process into your own project to generate vectors of your own types.
+You can adapt the template rendering into your project's build process in whichever way you prefer. In my projects, I render the templates for types as I need them, with the typeclasses that I require for each type. See the [build process of the tests](Makefile) as a basic example of how you could handle the rendering in your own project.
 
-If you would like a typical vector library - without type safety or memory locality - you can use `Vec_ptr`.
+See the [test sources](tests/test.c) for example usage of the Libvec API.
 
 
 ## Releases
 
-I'll tag the releases according to [semantic versioning](http://semver.org/spec/v2.0.0.html). All the macros preceded by `// @public` are considered public: they'll only change between major versions. The other macros could change any time. Non-preprocessor identifiers defined in header files are always considered public. New identifiers prefixed with `vector` (any case) will not warrant a major version bump.
+I'll tag the releases according to [semantic versioning](http://semver.org/spec/v2.0.0.html). All the macros preceded by `// @public` are considered public: they'll only change between major versions. The other macros could change any time. Non-preprocessor identifiers defined in header files are always considered public. New identifiers prefixed with `vec_` (any case) will not warrant a major version bump.
 
 Every version tag will be signed with [my GPG key](http://pool.sks-keyservers.net/pks/lookup?op=vindex&search=0xD020F814) (fingerprint: `0xD020F814`).
 
 
 ## Dependencies
 
-`Package.json` specifies the dependencies of Libvec: where to get them, and what version to use. I've developed a tool called [Puck](https://gitorious.org/mcinglis/puck) that will parse such a `Package.json`, download the specified repositories, check out the specified version, and, if the dependency has its own `Package.json`, repeat that process for *its* dependencies. With `puck` on your PATH, in the directory of Libvec:
+`Package.json` specifies the dependencies of Libvec: where to get them, and what version to use. I've developed a tool called [Puck](https://bitbucket.org/mcinglis/puck) that will parse such a `Package.json`, download the specified repositories, check out the specified version, and, if the dependency has its own `Package.json`, repeat that process for *its* dependencies. With `puck` on your PATH, in the directory of Libvec:
 
 ``` sh
 $ puck update
 $ puck execute build
+# Then you can:
+$ make test
 ```
 
 There's nothing magic to what Puck does, so if you would prefer, you can set up the dependencies manually. You just need to have the dependencies in the `deps` directory within the Libvec directory, and have them built (if necessary) before building Libvec.
@@ -29,7 +31,7 @@ There is no `build` command specified for Libvec, because you should manage the 
 
 ## Collaboration
 
-Libvec is available at [Gitorious](https://gitorious.org/mcinglis/libvec), [Bitbucket](https://bitbucket.org/mcinglis/libvec), and [GitHub](https://github.com/mcinglis/libvec).
+Libvec is available at [Bitbucket](https://bitbucket.org/mcinglis/libvec) and [GitHub](https://github.com/mcinglis/libvec).
 
 Questions, discussion, bug reports and feature requests are welcome at [the GitHub issue tracker](https://github.com/mcinglis/libvec/issues), or via [emails](mailto:me@minglis.id.au).
 
