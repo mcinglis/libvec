@@ -233,7 +233,7 @@ vec_{{funcname}}__memcpy_from(
         void const * const from,
         size_t const from_size )
 {
-    ASSERT( vec_{{funcname}}__is_valid( to ), from != NULL );
+    ASSERT( vec_{{funcname}}__is_valid( to ) );
 
     arraym_{{funcname}}__memcpy_from(
         arraym_{{funcname}}__view_vec_whole( to ), from, from_size );
@@ -246,7 +246,7 @@ vec_{{funcname}}__memcpy_to(
         void * const to,
         size_t const to_size )
 {
-    ASSERT( vec_{{funcname}}__is_valid( from ), to != NULL );
+    ASSERT( vec_{{funcname}}__is_valid( from ) );
 
     arraym_{{funcname}}__memcpy_to(
         arraym_{{funcname}}__view_vec( from ), to, to_size );
