@@ -27,24 +27,29 @@ libarray_types := $(libvec_types)
 libmaybe_types := $(libarray_types) size
 libbase_types  := $(libmaybe_types)
 
-char_type        := char
-char_options     := --typeclasses NULL BOUNDED EQ ORD ENUM CHAR NUM FROM_STR \
-                    --extra num_type=signed
+char_type := char
+char_options := \
+    --typeclasses NULL BOUNDED EQ ORD ENUM CHAR NUM INTEGER FROM_STR \
+    --extra num_type=signed
 
-uchar_type       := uchar
-uchar_options    := --typeclasses NULL BOUNDED EQ ORD ENUM CHAR NUM FROM_STR \
-                    --extra num_type=unsigned
+uchar_type := uchar
+uchar_options := \
+    --typeclasses NULL BOUNDED EQ ORD ENUM CHAR NUM INTEGER FROM_STR \
+    --extra num_type=unsigned
 
-int_type         := int
-int_options      := --typeclasses NULL BOUNDED EQ ORD ENUM NUM FROM_STR \
-                    --extra num_type=signed
+int_type := int
+int_options := \
+    --typeclasses NULL BOUNDED EQ ORD ENUM NUM INTEGER FROM_STR \
+    --extra num_type=signed
 
-ptr_long_type    := long const *
-ptr_long_options := --typeclasses NULL EQ ORD
+ptr_long_type := long const *
+ptr_long_options := \
+    --typeclasses NULL EQ ORD
 
-size_type        := size_t
-size_options     := --typeclasses NULL BOUNDED EQ ORD ENUM NUM FROM_STR \
-                    --extra num_type=unsigned
+size_type := size_t
+size_options := \
+    --typeclasses NULL BOUNDED EQ ORD ENUM NUM FROM_STR \
+    --extra num_type=unsigned
 
 libbase_sources := $(foreach t,$(libbase_types),$(LIBBASE)/$t.c)
 libbase_headers := $(libbase_sources:.c=.h)

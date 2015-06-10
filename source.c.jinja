@@ -2468,12 +2468,12 @@ vec_{{funcname}}__equal_str0(
 
 
 void
-vec_{{funcname}}__arg_parse(
+vec_{{funcname}}__argparse(
         char const * const name,
         char const * const value,
         void * const vec_ptr )
 {
-    ASSERT( value != NULL, vec_ptr != NULL );
+    ASSERT( vec_ptr != NULL );
 
     errno = 0;
     {{type}} const x = {{funcname}}__from_str( value );
