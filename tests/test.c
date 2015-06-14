@@ -61,7 +61,7 @@ test_vec_ptr_long( void )
                               &( long ){ 1 }, &( long ){ 2 },
                               &( long ){ 4 }, &( long ){ 8 } },
                           4, 4 );
-    Vec_ptr_long ys = vec_ptr_long__copy( xs );
+    Vec_ptr_long ys = vec_ptr_long__copy_vec( xs );
     Vec_ptr_long zs = vec_ptr_long__new(
                           ( long const * [] ){
                               &( long ){ 1 }, &( long ){ 2 },
@@ -233,10 +233,10 @@ test_into( void )
 {
     Vec_int xs = vec_int__new_els( 1, 2, 3 );
     Vec_int ys = vec_int__new_alloc( 0 );
-    vec_int__into_vec( xs, &ys );
+    vec_int__copy_vec_into( &ys, xs );
     ASSERT( vec_int__equal( xs, ys ), xs.capacity == ys.capacity );
     vec_int__grow_capacity_by( &ys, 5 );
-    vec_int__into_vec( xs, &ys );
+    vec_int__copy_vec_into( &ys, xs );
     ASSERT( vec_int__equal( xs, ys ), xs.capacity < ys.capacity );
     vec_int__append( &ys, 999 );
     ASSERT( vec_int__equal( ys, ( Vec_int ) VEC_INT( 1, 2, 3, 999 ) ) );

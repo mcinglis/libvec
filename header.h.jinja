@@ -78,42 +78,32 @@ vec_{{funcname}}__new_calloc(
         size_t capacity );
 
 
+Vec_{{typename}}
+vec_{{funcname}}__new_empty(
+        void );
+
+
 #define vec_{{funcname}}__new_els( ... ) \
-    vec_{{funcname}}__copy( \
+    vec_{{funcname}}__copy_vec( \
         ( Vec_{{typename}} ) VEC_{{macroname}}( __VA_ARGS__ ) )
 
 
-Vec_{{typename}}
-vec_{{funcname}}__copy(
-        Vec_{{typename}} );
+void
+vec_{{funcname}}__free(
+        Vec_{{typename}} * xs );
 
 
-Vec_{{typename}}
-vec_{{funcname}}__copy_arrayc(
-        ArrayC_{{typename}} );
+void
+vec_{{funcname}}__realloc(
+        Vec_{{typename}} * xs,
+        size_t new_capacity );
 
 
-Vec_{{typename}}
-vec_{{funcname}}__copy_arraym(
-        ArrayM_{{typename}} );
-
-
-Vec_{{typename}}
-vec_{{funcname}}__copyc_vec(
-        Vec_{{typename}},
-        size_t capacity );
-
-
-Vec_{{typename}}
-vec_{{funcname}}__copyc_arrayc(
-        ArrayC_{{typename}},
-        size_t capacity );
-
-
-Vec_{{typename}}
-vec_{{funcname}}__copyc_arraym(
-        ArrayM_{{typename}},
-        size_t capacity );
+void
+vec_{{funcname}}__realloc_with(
+        Vec_{{typename}} * xs,
+        size_t new_capacity,
+        void ( * freer )( {{type}} * ) );
 
 
 Vec_{{typename}}
@@ -135,89 +125,94 @@ vec_{{funcname}}__memcpy_to(
         size_t to_size );
 
 
-void
-vec_{{funcname}}__copy_into_vec(
-        Vec_{{typename}} from,
-        Vec_{{typename}} to );
-// Copies `n` elements from `from` to `to`, where `n` is the minimum of the
-// lengths of `from` and `to`.
+Vec_{{typename}}
+vec_{{funcname}}__copy_vec(
+        Vec_{{typename}} );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy_vec_with(
+        Vec_{{typename}},
+        void ( * copier )( {{type}} * to_el, {{type}} from_el ) );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy_arrayc(
+        ArrayC_{{typename}} );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy_arrayc_with(
+        ArrayC_{{typename}},
+        void ( * copier )( {{type}} * to_el, {{type}} from_el ) );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy_arraym(
+        ArrayM_{{typename}} );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy_arraym_with(
+        ArrayM_{{typename}},
+        void ( * copier )( {{type}} * to_el, {{type}} from_el ) );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copyc_vec(
+        Vec_{{typename}},
+        size_t capacity );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copyc_arrayc(
+        ArrayC_{{typename}},
+        size_t capacity );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copyc_arraym(
+        ArrayM_{{typename}},
+        size_t capacity );
 
 
 void
-vec_{{funcname}}__copy_into_vec_with(
-        Vec_{{typename}} from,
-        Vec_{{typename}} to,
-        void ( * copier )( {{type}} from, {{type}} * to ) );
-// Calls `copier` (or byte-wise copy if null) with all the respective elements
-// in `from` and `to` up to the minimum length of both vectors.
-
-
-void
-vec_{{funcname}}__copy_into_arraym(
-        Vec_{{typename}} from,
-        ArrayM_{{typename}} to );
-// Copies `n` elements from `from` to `to`, where `n` is the minimum of the
-// lengths of `from` and `to`.
-
-
-void
-vec_{{funcname}}__copy_into_arraym_with(
-        Vec_{{typename}} from,
-        ArrayM_{{typename}} to,
-        void ( * copier )( {{type}} from, {{type}} * to ) );
-// Calls `copier` (or byte-wise copy if null) with all the respective elements
-// in `from` and `to` up to the minimum lengths of `from` and `to`.
-
-
-void
-vec_{{funcname}}__into_vec(
-        Vec_{{typename}} from,
-        Vec_{{typename}} * to );
-// Copies all elements from `from` to `to`, expanding the capacity of `to` if
-// needed.
-
-
-void
-vec_{{funcname}}__into_vec_with(
-        Vec_{{typename}} from,
+vec_{{funcname}}__copy_vec_into(
         Vec_{{typename}} * to,
-        void ( * copier )( {{type}} from, {{type}} * to ),
-        void ( * freer )( {{type}} * unused_to ) );
-// Calls `freer` (if non-null) with all elements in `to` at indices past the
-// length of `from`, expands `to` to have at least a capacity of the length of
-// `from`, and calls `copier` (or byte-wise copy if null) with all the
-// respective elements in `from` and `to`.
+        Vec_{{typename}} from );
 
 
 void
-vec_{{funcname}}__into_arraym(
+vec_{{funcname}}__copy_vec_into_with(
+        Vec_{{typename}} * to,
         Vec_{{typename}} from,
-        ArrayM_{{typename}} * to );
-// Reallocates `to` to the length of `from`, and copies all elements from
-// `from` to `to`.
+        void ( * copier )( {{type}} * to_el, {{type}} from_el ) );
 
 
 void
-vec_{{funcname}}__into_arraym_with(
-        Vec_{{typename}} from,
-        ArrayM_{{typename}} * to,
-        void ( * copier )( {{type}} from, {{type}} * to ),
-        void ( * freer )( {{type}} * unused_to ) );
-// Calls `freer` (if non-null) with all elements in `to` at indices past the
-// length of `from`, reallocates `to` to the length of `from`, and calls
-// `copier` (or byte-wise copy if null) with all the respective elements in
-// `from` and `to`.
+vec_{{funcname}}__copy_arrayc_into(
+        Vec_{{typename}} * to,
+        ArrayC_{{typename}} from );
 
 
 void
-vec_{{funcname}}__free(
-        Vec_{{typename}} * xs );
+vec_{{funcname}}__copy_arrayc_into_with(
+        Vec_{{typename}} * to,
+        ArrayC_{{typename}} from,
+        void ( * copier )( {{type}} * to_el, {{type}} from_el ) );
 
 
 void
-vec_{{funcname}}__realloc(
-        Vec_{{typename}} * xs,
-        size_t new_capacity );
+vec_{{funcname}}__copy_arraym_into(
+        Vec_{{typename}} * to,
+        ArrayM_{{typename}} from );
+
+
+void
+vec_{{funcname}}__copy_arraym_into_with(
+        Vec_{{typename}} * to,
+        ArrayM_{{typename}} from,
+        void ( * copier )( {{type}} * to_el, {{type}} from_el ) );
 
 
 void
@@ -480,6 +475,21 @@ vec_{{funcname}}__lastp(
 
 Maybe_{{typename}}
 vec_{{funcname}}__lastm(
+        Vec_{{typename}} );
+
+
+{{type}}
+vec_{{funcname}}__end(
+        Vec_{{typename}} );
+
+
+{{type}} *
+vec_{{funcname}}__endp(
+        Vec_{{typename}} );
+
+
+Maybe_{{typename}}
+vec_{{funcname}}__endm(
         Vec_{{typename}} );
 
 
@@ -924,23 +934,23 @@ arrayc_{{funcname}}__view_vec(
         Vec_{{typename}} );
 
 
-ArrayM_{{typename}}
-arraym_{{funcname}}__view_vec(
-        Vec_{{typename}} );
-
-
-ArrayM_{{typename}}
-arraym_{{funcname}}__copy_vec(
-        Vec_{{typename}} );
-
-
 ArrayC_{{typename}}
 arrayc_{{funcname}}__view_vec_whole(
         Vec_{{typename}} );
 
 
 ArrayM_{{typename}}
+arraym_{{funcname}}__view_vec(
+        Vec_{{typename}} );
+
+
+ArrayM_{{typename}}
 arraym_{{funcname}}__view_vec_whole(
+        Vec_{{typename}} );
+
+
+ArrayM_{{typename}}
+arraym_{{funcname}}__copy_vec(
         Vec_{{typename}} );
 
 
@@ -1108,11 +1118,23 @@ vec_{{funcname}}__copy_buf(
 
 
 Vec_{{typename}}
+vec_{{funcname}}__copy_buf_with(
+        {{type}} const * from,
+        void ( * copier )( {{type}} * new_el, {{type}} from_el ) );
+
+
+Vec_{{typename}}
 vec_{{funcname}}__copy_buf0(
         {{type}} const * buf );
 // Returns a vector copy representation of the buffer `buf` terminated by
 // `{{funcname}}__null()`, including that null terminator. If
 // `buffer == NULL`, returns an empty vector.
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy_buf0_with(
+        {{type}} const * from,
+        void ( * copier )( {{type}} * new_el, {{type}} from_el ) );
 
 
 Vec_{{typename}}
@@ -1133,6 +1155,32 @@ vec_{{funcname}}__copyc_buf0(
 // `{{funcname}}__null()`, including that null terminator. The new vector will
 // have a minimum capacity of `capacity`; more if `buf` is larger. If
 // `buffer == NULL`, returns an empty vector.
+
+
+void
+vec_{{funcname}}__copy_buf_into(
+        Vec_{{typename}} * to,
+        {{type}} const * from );
+
+
+void
+vec_{{funcname}}__copy_buf_into_with(
+        Vec_{{typename}} * to,
+        {{type}} const * from,
+        void ( * copier )( {{type}} * to_el, {{type}} from_el ) );
+
+
+void
+vec_{{funcname}}__copy_buf0_into(
+        Vec_{{typename}} * to,
+        {{type}} const * from );
+
+
+void
+vec_{{funcname}}__copy_buf0_into_with(
+        Vec_{{typename}} * to,
+        {{type}} const * from,
+        void ( * copier )( {{type}} * to_el, {{type}} from_el ) );
 
 
 void
@@ -1231,8 +1279,9 @@ vec_{{funcname}}__copy_str(
 
 
 Vec_{{typename}}
-vec_{{funcname}}__copy_str0(
-        char const * str );
+vec_{{funcname}}__copy_str_with(
+        char const * str,
+        void ( * copier )( {{type}} * new_el, char c ) );
 
 
 Vec_{{typename}}
@@ -1241,10 +1290,17 @@ vec_{{funcname}}__copyc_str(
         size_t capacity );
 
 
-Vec_{{typename}}
-vec_{{funcname}}__copyc_str0(
-        char const * str,
-        size_t capacity );
+void
+vec_{{funcname}}__copy_str_into(
+        Vec_{{typename}} * to,
+        char const * from );
+
+
+void
+vec_{{funcname}}__copy_str_into_with(
+        Vec_{{typename}} * to,
+        char const * from,
+        void ( * copier )( {{type}} * to_el, char from_el ) );
 
 
 void
@@ -1254,9 +1310,53 @@ vec_{{funcname}}__extend_str(
 
 
 void
+vec_{{funcname}}__extend_str_with(
+        Vec_{{typename}} * vec,
+        char const * str,
+        void ( * copier )( {{type}} * vec_el, char str_el ) );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy_str0(
+        char const * str );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copy_str0_with(
+        char const * str,
+        void ( * copier )( {{type}} * new_el, char c ) );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__copyc_str0(
+        char const * str,
+        size_t capacity );
+
+
+void
+vec_{{funcname}}__copy_str0_into(
+        Vec_{{typename}} * to,
+        char const * from );
+
+
+void
+vec_{{funcname}}__copy_str0_into_with(
+        Vec_{{typename}} * to,
+        char const * from,
+        void ( * copier )( {{type}} * to_el, char from_el ) );
+
+
+void
 vec_{{funcname}}__extend_str0(
         Vec_{{typename}} * vec,
         char const * str );
+
+
+void
+vec_{{funcname}}__extend_str0_with(
+        Vec_{{typename}} * vec,
+        char const * str,
+        void ( * copier )( {{type}} * vec_el, char str_el ) );
 
 
 Vec_{{typename}}
