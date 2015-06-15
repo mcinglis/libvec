@@ -1398,6 +1398,45 @@ vec_{{funcname}}__extend_fmtv(
         va_list ap );
 
 
+Vec_{{typename}}
+vec_{{funcname}}__new_fmt0(
+        char const * format,
+        ... )
+#ifdef HAVE_ATTRIBUTE_FORMAT
+    __attribute__( ( format( printf, 1, 2 ) ) )
+#endif
+    ;
+
+
+void
+vec_{{funcname}}__fmt0_into(
+        Vec_{{typename}} *,
+        char const * format,
+        ... )
+#ifdef HAVE_ATTRIBUTE_FORMAT
+    __attribute__( ( format( printf, 2, 3 ) ) )
+#endif
+    ;
+
+
+void
+vec_{{funcname}}__extend_fmt0(
+        Vec_{{typename}} *,
+        char const * format,
+        ... )
+#ifdef HAVE_ATTRIBUTE_FORMAT
+    __attribute__( ( format( printf, 2, 3 ) ) )
+#endif
+    ;
+
+
+void
+vec_{{funcname}}__extend_fmtv0(
+        Vec_{{typename}} *,
+        char const * format,
+        va_list ap );
+
+
 {% if 'EQ' in typeclasses %}
 
 

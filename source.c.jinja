@@ -2673,6 +2673,88 @@ vec_{{funcname}}__extend_fmtv(
 }
 
 
+Vec_{{typename}}
+vec_{{funcname}}__new_fmt0(
+        char const * const format,
+        ... )
+{
+    ASSERT( format != NULL );
+
+    Vec_{{typename}} v = ( Vec_{{typename}} ){ 0 };
+    va_list ap;
+    va_start( ap, format );
+    errno = 0;
+    vec_{{funcname}}__extend_fmtv0( &v, format, ap );
+    int const err = errno;
+    va_end( ap );
+    if ( err ) { errno = err; }
+    return v;
+}
+
+
+void
+vec_{{funcname}}__fmt0_into(
+        Vec_{{typename}} * const v,
+        char const * const format,
+        ... )
+{
+    ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ),
+            format != NULL );
+
+    va_list ap;
+    va_start( ap, format );
+    vec_{{funcname}}__empty( v );
+    errno = 0;
+    vec_{{funcname}}__extend_fmtv0( v, format, ap );
+    int const err = errno;
+    va_end( ap );
+    if ( err ) { errno = err; }
+}
+
+
+void
+vec_{{funcname}}__extend_fmt0(
+        Vec_{{typename}} * const v,
+        char const * const format,
+        ... )
+{
+    ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ),
+            format != NULL );
+
+    va_list ap;
+    va_start( ap, format );
+    errno = 0;
+    vec_{{funcname}}__extend_fmtv0( v, format, ap );
+    int const err = errno;
+    va_end( ap );
+    if ( err ) { errno = err; }
+}
+
+
+void
+vec_{{funcname}}__extend_fmtv0(
+        Vec_{{typename}} * const v,
+        char const * const format,
+        va_list ap )
+{
+    ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ) );
+
+    if ( format == NULL ) { return; }
+    char * ext;
+    errno = 0;
+    // TODO: asprintf is a non-standard GNU/BSD extension to libc; replace
+    int const r = vasprintf( &ext, format, ap );
+    if ( r < 0 && errno == 0 ) {
+        errno = EIO;
+    }
+    if ( errno ) { return; }
+    vec_{{funcname}}__extend_str0( v, ext );
+    int const extend_err = errno;
+    free( ext );
+    if ( extend_err ) { errno = extend_err; }
+}
+
+
 {% if 'EQ' in typeclasses %}
 
 
