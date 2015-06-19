@@ -100,20 +100,15 @@ static
 void
 test_filtering( void )
 {
-    Vec_int a = VEC_INT( 0, 1, 2, 3, 4 );
-    int * const a_els = a.e;
-    ASSERT( a.length == 5, a.capacity == 5 );
-    vec_int__filter( &a, int__is_odd );
-    ASSERT( vec_int__equal( a, ( Vec_int ) VEC_INT( 1, 3 ) ),
-            a.e == a_els );
-
-    Vec_int b = VEC_INT( 5, 6, 7, 8, 9 );
-    ASSERT( b.length == 5, b.capacity == 5 );
-    Vec_int bf = vec_int__filtered( b, int__is_even );
-    ASSERT( vec_int__equal( b, ( Vec_int ) VEC_INT( 5, 6, 7, 8, 9 ) ),
-            vec_int__equal( bf, ( Vec_int ) VEC_INT( 6, 8 ) ),
-            bf.e != b.e );
-    vec_int__free( &bf );
+    {
+        Vec_int v = vec_int__view_els( 0, 1, 2, 3, 4 );
+        vec_int__filter( &v, int__is_odd );
+        ASSERT( vec_int__equal_els( v, 0, 2, 4 ) );
+    } {
+        Vec_int v = vec_int__view_els( 5, 6, 7, 8, 9 );
+        vec_int__filter( &v, int__is_even );
+        ASSERT( vec_int__equal_els( v, 5, 7, 9 ) );
+    }
 }
 
 
@@ -280,6 +275,12 @@ test_replace( void )
         size_t const n = vec_char__replace_arrayc(
                              &v, 'x', arrayc_char__view_buf( "x" ) );
         ASSERT( n == 4, vec_char__equal_str( v, "x1x3x5x" ) );
+        vec_char__free( &v );
+    } {
+        Vec_char v = vec_char__copy_str( "/test/example_$.csv" );
+        size_t const n = vec_char__replace_arrayc(
+                             &v, '$', arrayc_char__view_buf( "file" ) );
+        ASSERT( n == 1, vec_char__equal_str( v, "/test/example_file.csv" ) );
         vec_char__free( &v );
     }
 }

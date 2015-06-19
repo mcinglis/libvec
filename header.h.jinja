@@ -1166,18 +1166,6 @@ vec_{{funcname}}__filter_not_with(
         void ( * freer )( {{type}} * ) );
 
 
-Vec_{{typename}}
-vec_{{funcname}}__filtered(
-        Vec_{{typename}} xs,
-        bool ( * f )( {{type}} ) );
-
-
-Vec_{{typename}}
-vec_{{funcname}}__filtered_not(
-        Vec_{{typename}} xs,
-        bool ( * f )( {{type}} ) );
-
-
 struct vec_{{funcname}}__each__options {
     void ( * f )( {{type}} );
     bool ( * b )( {{type}} );
@@ -1501,12 +1489,6 @@ void
 vec_{{funcname}}__filter_null(
         Vec_{{typename}} * );
 // Equivalent to `vec_{{funcname}}__filter( v, {{funcname}}__is_null )`.
-
-
-Vec_{{typename}}
-vec_{{funcname}}__filtered_null(
-        Vec_{{typename}} );
-// Equivalent to `vec_{{funcname}}__filtered( v, {{funcname}}__is_null )`.
 
 
 {% endif %} {# NULL #}

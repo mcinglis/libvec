@@ -2341,7 +2341,7 @@ filter(
     for ( size_t i = 0; i < xs->length; i++ ) {
         {{type}} * const count_el = vec_{{funcname}}__getp( *xs, count );
         {{type}} const i_el = vec_{{funcname}}__get( *xs, i );
-        if ( f( i_el ) == result ) {
+        if ( f( i_el ) != result ) {
             // Don't free the `count`th element if it's the `i`th element:
             if ( count != i && freer != NULL ) {
                 freer( count_el );
@@ -2397,53 +2397,6 @@ vec_{{funcname}}__filter_not_with(
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ), f != NULL );
 
     filter( xs, f, false, freer );
-}
-
-
-static
-Vec_{{typename}}
-filtered(
-        Vec_{{typename}} const xs,
-        bool ( * const f )( {{type}} ),
-        bool const result )
-{
-    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
-
-    errno = 0;
-    Vec_{{typename}} new = vec_{{funcname}}__new_calloc( xs.length );
-    if ( errno ) { return new; }
-    for ( size_t i = 0; i < xs.length; i++ ) {
-        {{type}} const el = vec_{{funcname}}__get( xs, i );
-        bool const r = f( el );
-        if ( errno ) { return new; }
-        if ( r == result ) {
-            vec_{{funcname}}__append( &new, el );
-            ASSERT( errno == 0 ); // no reallocation should have occurred
-        }
-    }
-    return new;
-}
-
-
-Vec_{{typename}}
-vec_{{funcname}}__filtered(
-        Vec_{{typename}} const xs,
-        bool ( * const f )( {{type}} ) )
-{
-    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
-
-    return filtered( xs, f, true );
-}
-
-
-Vec_{{typename}}
-vec_{{funcname}}__filtered_not(
-        Vec_{{typename}} const xs,
-        bool ( * const f )( {{type}} ) )
-{
-    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
-
-    return filtered( xs, f, false );
 }
 
 
@@ -2972,16 +2925,6 @@ vec_{{funcname}}__filter_null(
     ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ) );
 
     vec_{{funcname}}__filter( v, {{funcname}}__is_null );
-}
-
-
-Vec_{{typename}}
-vec_{{funcname}}__filtered_null(
-        Vec_{{typename}} const v )
-{
-    ASSERT( vec_{{funcname}}__is_valid( v ) );
-
-    return vec_{{funcname}}__filtered( v, {{funcname}}__is_null );
 }
 
 
