@@ -83,9 +83,13 @@ vec_{{funcname}}__new_empty(
         void );
 
 
+#define vec_{{funcname}}__view_els( ... ) \
+    ( ( Vec_{{typename}} ) VEC_{{macroname}}( __VA_ARGS__ ) )
+
+
 #define vec_{{funcname}}__new_els( ... ) \
     vec_{{funcname}}__copy_vec( \
-        ( Vec_{{typename}} ) VEC_{{macroname}}( __VA_ARGS__ ) )
+        vec_{{funcname}}__view_els( __VA_ARGS__ ) )
 
 
 void
@@ -398,21 +402,9 @@ vec_{{funcname}}__memzero_whole(
         Vec_{{typename}} );
 
 
-{{type}} *
-vec_{{funcname}}__append(
-        Vec_{{typename}} * xs,
-        {{type}} y );
-
-
-{{type}}
-vec_{{funcname}}__pop(
-        Vec_{{typename}} * xs );
-
-
 void
-vec_{{funcname}}__popn(
-        Vec_{{typename}} * xs,
-        size_t const n );
+vec_{{funcname}}__memzero_spare(
+        Vec_{{typename}} );
 
 
 void
@@ -427,25 +419,219 @@ vec_{{funcname}}__empty_with(
 
 
 void
-vec_{{funcname}}__extend_arrayc(
+vec_{{funcname}}__swap(
+        Vec_{{typename}} xs,
+        size_t i,
+        size_t j );
+
+
+{{type}} *
+vec_{{funcname}}__insert(
+        Vec_{{typename}} * xs,
+        size_t at,
+        {{type}} x );
+
+
+{{type}} *
+vec_{{funcname}}__insert_with(
+        Vec_{{typename}} * xs,
+        size_t at,
+        {{type}} x,
+        void ( * copier )( {{type}} * to, {{type}} from ) );
+
+
+{{type}} *
+vec_{{funcname}}__insert_arrayc(
+        Vec_{{typename}} * const xs,
+        size_t const at,
+        ArrayC_{{typename}} const ys );
+
+
+{{type}} *
+vec_{{funcname}}__insert_arrayc_with(
+        Vec_{{typename}} * xs,
+        size_t at,
+        ArrayC_{{typename}} ys,
+        void ( * copier )( {{type}} * to, {{type}} from ) );
+
+
+{{type}} *
+vec_{{funcname}}__insert_arraym(
+        Vec_{{typename}} * xs,
+        size_t at,
+        ArrayM_{{typename}} ys );
+
+
+{{type}} *
+vec_{{funcname}}__insert_arraym_with(
+        Vec_{{typename}} * xs,
+        size_t at,
+        ArrayM_{{typename}} ys,
+        void ( * copier )( {{type}} * to, {{type}} from ) );
+
+
+{{type}} *
+vec_{{funcname}}__insert_vec(
+        Vec_{{typename}} * xs,
+        size_t at,
+        Vec_{{typename}} ys );
+
+
+{{type}} *
+vec_{{funcname}}__insert_vec_with(
+        Vec_{{typename}} * xs,
+        size_t at,
+        Vec_{{typename}} ys,
+        void ( * copier )( {{type}} * to, {{type}} from ) );
+
+
+{{type}} *
+vec_{{funcname}}__append(
+        Vec_{{typename}} * xs,
+        {{type}} x );
+
+
+{{type}} *
+vec_{{funcname}}__append_with(
+        Vec_{{typename}} * xs,
+        {{type}} x,
+        void ( * copier )( {{type}} * to, {{type}} from ) );
+
+
+{{type}} *
+vec_{{funcname}}__append_arrayc(
         Vec_{{typename}} * xs,
         ArrayC_{{typename}} );
 
 
-void
-vec_{{funcname}}__extend_arraym(
+{{type}} *
+vec_{{funcname}}__append_arrayc_with(
+        Vec_{{typename}} * xs,
+        ArrayC_{{typename}},
+        void ( * copier )( {{type}} * to, {{type}} from ) );
+
+
+{{type}} *
+vec_{{funcname}}__append_arraym(
         Vec_{{typename}} * xs,
         ArrayM_{{typename}} );
 
 
-void
-vec_{{funcname}}__extend_vec(
+{{type}} *
+vec_{{funcname}}__append_arraym_with(
+        Vec_{{typename}} * xs,
+        ArrayM_{{typename}},
+        void ( * copier )( {{type}} * to, {{type}} from ) );
+
+
+{{type}} *
+vec_{{funcname}}__append_vec(
         Vec_{{typename}} * xs,
         Vec_{{typename}} );
 
 
-#define vec_{{funcname}}__extend_els( XS, ... ) \
-    vec_{{funcname}}__extend_arrayc( XS, ARRAYC_{{macroname}}( __VA_ARGS__ ) )
+{{type}} *
+vec_{{funcname}}__append_vec_with(
+        Vec_{{typename}} * xs,
+        Vec_{{typename}},
+        void ( * copier )( {{type}} * to, {{type}} from ) );
+
+
+#define vec_{{funcname}}__append_els( XS, ... ) \
+    vec_{{funcname}}__append_arrayc( XS, ARRAYC_{{macroname}}( __VA_ARGS__ ) )
+
+
+{{type}} *
+vec_{{funcname}}__prepend(
+        Vec_{{typename}} * xs,
+        {{type}} x );
+
+
+{{type}} *
+vec_{{funcname}}__prepend_with(
+        Vec_{{typename}} * xs,
+        {{type}} x,
+        void ( * copier )( {{type}} * to, {{type}} from ) );
+
+
+{{type}} *
+vec_{{funcname}}__prepend_arrayc(
+        Vec_{{typename}} * xs,
+        ArrayC_{{typename}} );
+
+
+{{type}} *
+vec_{{funcname}}__prepend_arrayc_with(
+        Vec_{{typename}} * xs,
+        ArrayC_{{typename}},
+        void ( * copier )( {{type}} * to, {{type}} from ) );
+
+
+{{type}} *
+vec_{{funcname}}__prepend_arraym(
+        Vec_{{typename}} * xs,
+        ArrayM_{{typename}} );
+
+
+{{type}} *
+vec_{{funcname}}__prepend_arraym_with(
+        Vec_{{typename}} * xs,
+        ArrayM_{{typename}},
+        void ( * copier )( {{type}} * to, {{type}} from ) );
+
+
+{{type}} *
+vec_{{funcname}}__prepend_vec(
+        Vec_{{typename}} * xs,
+        Vec_{{typename}} );
+
+
+{{type}} *
+vec_{{funcname}}__prepend_vec_with(
+        Vec_{{typename}} * xs,
+        Vec_{{typename}},
+        void ( * copier )( {{type}} * to, {{type}} from ) );
+
+
+#define vec_{{funcname}}__prepend_els( XS, ... ) \
+    vec_{{funcname}}__prepend_arrayc( XS, ARRAYC_{{macroname}}( __VA_ARGS__ ) )
+
+
+{{type}}
+vec_{{funcname}}__remove(
+        Vec_{{typename}} * xs,
+        size_t index );
+
+
+{{type}}
+vec_{{funcname}}__remove_with(
+        Vec_{{typename}} * xs,
+        size_t index,
+        void ( * freer )( {{type}} * x ) );
+
+
+{{type}}
+vec_{{funcname}}__pop(
+        Vec_{{typename}} * xs );
+
+
+{{type}}
+vec_{{funcname}}__pop_with(
+        Vec_{{typename}} * xs,
+        void ( * freer )( {{type}} * x ) );
+
+
+void
+vec_{{funcname}}__popn(
+        Vec_{{typename}} * xs,
+        size_t const n );
+
+
+void
+vec_{{funcname}}__popn_with(
+        Vec_{{typename}} * xs,
+        size_t const n,
+        void ( * freer )( {{type}} * x ) );
 
 
 {{type}}
@@ -475,21 +661,6 @@ vec_{{funcname}}__lastp(
 
 Maybe_{{typename}}
 vec_{{funcname}}__lastm(
-        Vec_{{typename}} );
-
-
-{{type}}
-vec_{{funcname}}__end(
-        Vec_{{typename}} );
-
-
-{{type}} *
-vec_{{funcname}}__endp(
-        Vec_{{typename}} );
-
-
-Maybe_{{typename}}
-vec_{{funcname}}__endm(
         Vec_{{typename}} );
 
 
@@ -580,6 +751,16 @@ vec_{{funcname}}__left_half(
 
 Vec_{{typename}}
 vec_{{funcname}}__right_half(
+        Vec_{{typename}} );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__view_whole(
+        Vec_{{typename}} );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__view_spare(
         Vec_{{typename}} );
 
 
@@ -857,6 +1038,108 @@ vec_{{funcname}}__replaced_by(
         bool ( * eq )( {{type}} x, {{type}} el ) );
 
 
+size_t
+vec_{{funcname}}__replacef_arrayc(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}} x ),
+        ArrayC_{{typename}} repl );
+
+
+size_t
+vec_{{funcname}}__replacef_arrayc_with(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}} x ),
+        ArrayC_{{typename}} repl,
+        void ( * copier )( {{type}} * to, {{type}} from ),
+        void ( * freer )( {{type}} * x ) );
+
+
+size_t
+vec_{{funcname}}__replacef_arraym(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}} x ),
+        ArrayM_{{typename}} repl );
+
+
+size_t
+vec_{{funcname}}__replacef_arraym_with(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}} x ),
+        ArrayM_{{typename}} repl,
+        void ( * copier )( {{type}} * to, {{type}} from ),
+        void ( * freer )( {{type}} * x ) );
+
+
+size_t
+vec_{{funcname}}__replacef_vec(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}} x ),
+        Vec_{{typename}} repl );
+
+
+size_t
+vec_{{funcname}}__replacef_vec_with(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}} x ),
+        Vec_{{typename}} repl,
+        void ( * copier )( {{type}} * to, {{type}} from ),
+        void ( * freer )( {{type}} * x ) );
+
+
+size_t
+vec_{{funcname}}__replace_arrayc_by(
+        Vec_{{typename}} * xs,
+        {{type}} el,
+        ArrayC_{{typename}} repl,
+        bool ( * eq )( {{type}} x, {{type}} y ) );
+
+
+size_t
+vec_{{funcname}}__replace_arrayc_by_with(
+        Vec_{{typename}} * xs,
+        {{type}} el,
+        ArrayC_{{typename}} repl,
+        bool ( * eq )( {{type}} x, {{type}} y ),
+        void ( * copier )( {{type}} * to, {{type}} from ),
+        void ( * freer )( {{type}} * x ) );
+
+
+size_t
+vec_{{funcname}}__replace_arraym_by(
+        Vec_{{typename}} * xs,
+        {{type}} el,
+        ArrayM_{{typename}} repl,
+        bool ( * eq )( {{type}} x, {{type}} y ) );
+
+
+size_t
+vec_{{funcname}}__replace_arraym_by_with(
+        Vec_{{typename}} * xs,
+        {{type}} el,
+        ArrayM_{{typename}} repl,
+        bool ( * eq )( {{type}} x, {{type}} y ),
+        void ( * copier )( {{type}} * to, {{type}} from ),
+        void ( * freer )( {{type}} * x ) );
+
+
+size_t
+vec_{{funcname}}__replace_vec_by(
+        Vec_{{typename}} * xs,
+        {{type}} el,
+        Vec_{{typename}} repl,
+        bool ( * eq )( {{type}} x, {{type}} y ) );
+
+
+size_t
+vec_{{funcname}}__replace_vec_by_with(
+        Vec_{{typename}} * xs,
+        {{type}} el,
+        Vec_{{typename}} repl,
+        bool ( * eq )( {{type}} x, {{type}} y ),
+        void ( * copier )( {{type}} * to, {{type}} from ),
+        void ( * freer )( {{type}} * x ) );
+
+
 void
 vec_{{funcname}}__filter(
         Vec_{{typename}} * xs,
@@ -864,9 +1147,23 @@ vec_{{funcname}}__filter(
 
 
 void
+vec_{{funcname}}__filter_with(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}} ),
+        void ( * freer )( {{type}} * ) );
+
+
+void
 vec_{{funcname}}__filter_not(
         Vec_{{typename}} * xs,
         bool ( * f )( {{type}} ) );
+
+
+void
+vec_{{funcname}}__filter_not_with(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}} ),
+        void ( * freer )( {{type}} * ) );
 
 
 Vec_{{typename}}
@@ -939,6 +1236,11 @@ arrayc_{{funcname}}__view_vec_whole(
         Vec_{{typename}} );
 
 
+ArrayC_{{typename}}
+arrayc_{{funcname}}__view_vec_spare(
+        Vec_{{typename}} );
+
+
 ArrayM_{{typename}}
 arraym_{{funcname}}__view_vec(
         Vec_{{typename}} );
@@ -946,6 +1248,11 @@ arraym_{{funcname}}__view_vec(
 
 ArrayM_{{typename}}
 arraym_{{funcname}}__view_vec_whole(
+        Vec_{{typename}} );
+
+
+ArrayM_{{typename}}
+arraym_{{funcname}}__view_vec_spare(
         Vec_{{typename}} );
 
 
@@ -1085,6 +1392,54 @@ vec_{{funcname}}__replaced(
         {{type}} replacement );
 
 
+size_t
+vec_{{funcname}}__replace_arrayc(
+        Vec_{{typename}} *,
+        {{type}} element,
+        ArrayC_{{typename}} replacement );
+
+
+size_t
+vec_{{funcname}}__replace_arrayc_with(
+        Vec_{{typename}} *,
+        {{type}} element,
+        ArrayC_{{typename}} replacement,
+        void ( * copier )( {{type}} * to, {{type}} from ),
+        void ( * freer )( {{type}} * x ) );
+
+
+size_t
+vec_{{funcname}}__replace_arraym(
+        Vec_{{typename}} *,
+        {{type}} element,
+        ArrayM_{{typename}} replacement );
+
+
+size_t
+vec_{{funcname}}__replace_arraym_with(
+        Vec_{{typename}} *,
+        {{type}} element,
+        ArrayM_{{typename}} replacement,
+        void ( * copier )( {{type}} * to, {{type}} from ),
+        void ( * freer )( {{type}} * x ) );
+
+
+size_t
+vec_{{funcname}}__replace_vec(
+        Vec_{{typename}} *,
+        {{type}} element,
+        Vec_{{typename}} replacement );
+
+
+size_t
+vec_{{funcname}}__replace_vec_with(
+        Vec_{{typename}} *,
+        {{type}} element,
+        Vec_{{typename}} replacement,
+        void ( * copier )( {{type}} * to, {{type}} from ),
+        void ( * freer )( {{type}} * x ) );
+
+
 {% endif %} {# EQ #}
 
 
@@ -1107,98 +1462,6 @@ vec_{{funcname}}__view_buf0(
 // Returns a vector representation of the buffer `buf` terminated by
 // `{{funcname}}__null()`, including that null terminator. If
 // `buffer == NULL`, returns an empty vector.
-
-
-Vec_{{typename}}
-vec_{{funcname}}__copy_buf(
-        {{type}} const * buf );
-// Returns a vector copy representation of the buffer `buf` terminated by
-// `{{funcname}}__null()`, not including that null terminator. If
-// `buffer == NULL`, returns an empty vector.
-
-
-Vec_{{typename}}
-vec_{{funcname}}__copy_buf_with(
-        {{type}} const * from,
-        void ( * copier )( {{type}} * new_el, {{type}} from_el ) );
-
-
-Vec_{{typename}}
-vec_{{funcname}}__copy_buf0(
-        {{type}} const * buf );
-// Returns a vector copy representation of the buffer `buf` terminated by
-// `{{funcname}}__null()`, including that null terminator. If
-// `buffer == NULL`, returns an empty vector.
-
-
-Vec_{{typename}}
-vec_{{funcname}}__copy_buf0_with(
-        {{type}} const * from,
-        void ( * copier )( {{type}} * new_el, {{type}} from_el ) );
-
-
-Vec_{{typename}}
-vec_{{funcname}}__copyc_buf(
-        {{type}} const * buf,
-        size_t capacity );
-// Returns a vector copy representation of the buffer `buf` terminated by
-// `{{funcname}}__null()`, not including that null terminator. The new vector
-// will have a minimum capacity of `capacity`; more if `buf` is larger. If
-// `buffer == NULL`, returns an empty vector.
-
-
-Vec_{{typename}}
-vec_{{funcname}}__copyc_buf0(
-        {{type}} const * buf,
-        size_t capacity );
-// Returns a vector copy representation of the buffer `buf` terminated by
-// `{{funcname}}__null()`, including that null terminator. The new vector will
-// have a minimum capacity of `capacity`; more if `buf` is larger. If
-// `buffer == NULL`, returns an empty vector.
-
-
-void
-vec_{{funcname}}__copy_buf_into(
-        Vec_{{typename}} * to,
-        {{type}} const * from );
-
-
-void
-vec_{{funcname}}__copy_buf_into_with(
-        Vec_{{typename}} * to,
-        {{type}} const * from,
-        void ( * copier )( {{type}} * to_el, {{type}} from_el ) );
-
-
-void
-vec_{{funcname}}__copy_buf0_into(
-        Vec_{{typename}} * to,
-        {{type}} const * from );
-
-
-void
-vec_{{funcname}}__copy_buf0_into_with(
-        Vec_{{typename}} * to,
-        {{type}} const * from,
-        void ( * copier )( {{type}} * to_el, {{type}} from_el ) );
-
-
-void
-vec_{{funcname}}__extend_buf(
-        Vec_{{typename}} * const xs,
-        {{type}} const * buf );
-// Extends the vector `xs` with the elements of the null-terminated buffer
-// `buf`, not including the null terminator. If `buffer == NULL`, the vector is
-// unchanged.
-
-
-void
-vec_{{funcname}}__extend_buf0(
-        Vec_{{typename}} * const xs,
-        {{type}} const * buf );
-// Extends the vector `xs` with the elements of the null-terminated buffer
-// `buf`, including the null terminator. If `buffer == NULL`, the vector is
-// unchanged.
 
 
 bool
@@ -1246,22 +1509,6 @@ vec_{{funcname}}__filtered_null(
 // Equivalent to `vec_{{funcname}}__filtered( v, {{funcname}}__is_null )`.
 
 
-{% if 'EQ' in typeclasses %}
-
-
-bool
-vec_{{funcname}}__equal_buf(
-        Vec_{{typename}} vec,
-        {{type}} const * buf );
-
-
-bool
-vec_{{funcname}}__equal_buf0(
-        Vec_{{typename}} vec,
-        {{type}} const * buf );
-
-
-{% endif %} {# EQ #}
 {% endif %} {# NULL #}
 
 
@@ -1279,12 +1526,6 @@ vec_{{funcname}}__copy_str(
 
 
 Vec_{{typename}}
-vec_{{funcname}}__copy_str_with(
-        char const * str,
-        void ( * copier )( {{type}} * new_el, char c ) );
-
-
-Vec_{{typename}}
 vec_{{funcname}}__copyc_str(
         char const * str,
         size_t capacity );
@@ -1296,35 +1537,28 @@ vec_{{funcname}}__copy_str_into(
         char const * from );
 
 
-void
-vec_{{funcname}}__copy_str_into_with(
-        Vec_{{typename}} * to,
-        char const * from,
-        void ( * copier )( {{type}} * to_el, char from_el ) );
+{{type}} *
+vec_{{funcname}}__insert_str(
+        Vec_{{typename}} * v,
+        size_t at,
+        char const * str );
 
 
-void
-vec_{{funcname}}__extend_str(
+{{type}} *
+vec_{{funcname}}__append_str(
         Vec_{{typename}} * vec,
         char const * str );
 
 
-void
-vec_{{funcname}}__extend_str_with(
+{{type}} *
+vec_{{funcname}}__prepend_str(
         Vec_{{typename}} * vec,
-        char const * str,
-        void ( * copier )( {{type}} * vec_el, char str_el ) );
+        char const * str );
 
 
 Vec_{{typename}}
 vec_{{funcname}}__copy_str0(
         char const * str );
-
-
-Vec_{{typename}}
-vec_{{funcname}}__copy_str0_with(
-        char const * str,
-        void ( * copier )( {{type}} * new_el, char c ) );
 
 
 Vec_{{typename}}
@@ -1339,24 +1573,23 @@ vec_{{funcname}}__copy_str0_into(
         char const * from );
 
 
-void
-vec_{{funcname}}__copy_str0_into_with(
-        Vec_{{typename}} * to,
-        char const * from,
-        void ( * copier )( {{type}} * to_el, char from_el ) );
+{{type}} *
+vec_{{funcname}}__insert_str0(
+        Vec_{{typename}} * v,
+        size_t at,
+        char const * str );
 
 
-void
-vec_{{funcname}}__extend_str0(
+{{type}} *
+vec_{{funcname}}__append_str0(
         Vec_{{typename}} * vec,
         char const * str );
 
 
-void
-vec_{{funcname}}__extend_str0_with(
+{{type}} *
+vec_{{funcname}}__prepend_str0(
         Vec_{{typename}} * vec,
-        char const * str,
-        void ( * copier )( {{type}} * vec_el, char str_el ) );
+        char const * str );
 
 
 Vec_{{typename}}
@@ -1381,7 +1614,7 @@ vec_{{funcname}}__fmt_into(
 
 
 void
-vec_{{funcname}}__extend_fmt(
+vec_{{funcname}}__append_fmt(
         Vec_{{typename}} *,
         char const * format,
         ... )
@@ -1392,7 +1625,7 @@ vec_{{funcname}}__extend_fmt(
 
 
 void
-vec_{{funcname}}__extend_fmtv(
+vec_{{funcname}}__append_fmtv(
         Vec_{{typename}} *,
         char const * format,
         va_list ap );
@@ -1420,7 +1653,7 @@ vec_{{funcname}}__fmt0_into(
 
 
 void
-vec_{{funcname}}__extend_fmt0(
+vec_{{funcname}}__append_fmt0(
         Vec_{{typename}} *,
         char const * format,
         ... )
@@ -1431,7 +1664,7 @@ vec_{{funcname}}__extend_fmt0(
 
 
 void
-vec_{{funcname}}__extend_fmtv0(
+vec_{{funcname}}__append_fmtv0(
         Vec_{{typename}} *,
         char const * format,
         va_list ap );

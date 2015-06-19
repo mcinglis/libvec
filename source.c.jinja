@@ -103,7 +103,7 @@ vec_{{funcname}}__new(
     errno = 0;
     size_t const sz = size__mul( nlength, sizeof ( {{type}} ) );
     if ( errno ) { return ( Vec_{{typename}} ){ 0 }; }
-    Vec_{{typename}} new = vec_{{funcname}}__new_alloc(
+    Vec_{{typename}} new = vec_{{funcname}}__new_calloc(
                                MAX( nlength, capacity ) );
     if ( errno ) { return ( Vec_{{typename}} ){ 0 }; }
     vec_{{funcname}}__memcpy_from( new, elements, sz );
@@ -463,10 +463,18 @@ vec_{{funcname}}__grow_capacity_for(
 {
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
 
-    vec_{{funcname}}__grow_capacity_by(
-            xs,
-            size__sub_b( req_space,
-                         vec_{{funcname}}__spare_capacity( *xs ) ) );
+    errno = 0;
+    size_t new_capacity = xs->capacity;
+    while ( ( new_capacity - xs->length ) < req_space ) {
+        if ( new_capacity == size__max_bound() ) {
+            errno = ENOMEM;
+            return;
+        }
+        new_capacity = new_capacity == 0
+                       ? init_capacity
+                       : size__mul_b( new_capacity, growth_mul );
+    }
+    vec_{{funcname}}__realloc( xs, new_capacity );
 }
 
 
@@ -787,47 +795,14 @@ vec_{{funcname}}__memzero_whole(
 }
 
 
-{{type}} *
-vec_{{funcname}}__append(
-        Vec_{{typename}} * const xs,
-        {{type}} const x )
-{
-    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
-
-    if ( vec_{{funcname}}__is_full( *xs ) ) {
-        errno = 0;
-        vec_{{funcname}}__grow_capacity( xs );
-        if ( errno ) { return NULL; }
-    }
-    {{type}} * const p = xs->e + xs->length;
-    *p = x;
-    xs->length++;
-    return p;
-}
-
-
-{{type}}
-vec_{{funcname}}__pop(
-        Vec_{{typename}} * const xs )
-{
-    ASSERT( xs != NULL,
-            vec_{{funcname}}__is_valid( *xs ),
-            vec_{{funcname}}__isnt_empty( *xs ) );
-
-    {{type}} const el = vec_{{funcname}}__last( *xs );
-    xs->length--;
-    return el;
-}
-
-
 void
-vec_{{funcname}}__popn(
-        Vec_{{typename}} * const xs,
-        size_t const n )
+vec_{{funcname}}__memzero_spare(
+        Vec_{{typename}} const xs )
 {
-    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
 
-    xs->length = size__sub_b( xs->length, n );
+    arraym_{{funcname}}__memzero(
+        arraym_{{funcname}}__view_vec_spare( xs ) );
 }
 
 
@@ -854,47 +829,445 @@ vec_{{funcname}}__empty_with(
 
 
 void
-vec_{{funcname}}__extend_arrayc(
+vec_{{funcname}}__swap(
+        Vec_{{typename}} const xs,
+        size_t const i,
+        size_t const j )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), i < xs.length, j < xs.length );
+
+    {{type}} * const i_el = vec_{{funcname}}__getp( xs, i );
+    {{type}} * const j_el = vec_{{funcname}}__getp( xs, j );
+    ASSERT( i_el != NULL, j_el != NULL );
+    {{type}} const tmp = *i_el;
+    *i_el = *j_el;
+    *j_el = tmp;
+}
+
+
+{{type}} *
+vec_{{funcname}}__insert(
+        Vec_{{typename}} * const xs,
+        size_t const at,
+        {{type}} const x )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            at <= xs->length );
+
+    return vec_{{funcname}}__insert_with( xs, at, x, NULL );
+}
+
+
+{{type}} *
+vec_{{funcname}}__insert_with(
+        Vec_{{typename}} * const xs,
+        size_t const at,
+        {{type}} const x,
+        void ( * const copier )( {{type}} * to, {{type}} from ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            at <= xs->length );
+
+    return vec_{{funcname}}__insert_arrayc_with(
+               xs, at, ARRAYC_{{macroname}}( x ), copier );
+}
+
+
+{{type}} *
+vec_{{funcname}}__insert_arrayc(
+        Vec_{{typename}} * const xs,
+        size_t const at,
+        ArrayC_{{typename}} const ys )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            at <= xs->length,
+            arrayc_{{funcname}}__is_valid( ys ) );
+
+    return vec_{{funcname}}__insert_arrayc_with( xs, at, ys, NULL );
+}
+
+
+{{type}} *
+vec_{{funcname}}__insert_arrayc_with(
+        Vec_{{typename}} * const xs,
+        size_t const at,
+        ArrayC_{{typename}} const ys,
+        void ( * const copier )( {{type}} * to, {{type}} from ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            at <= xs->length,
+            arrayc_{{funcname}}__is_valid( ys ) );
+
+    vec_{{funcname}}__grow_capacity_for( xs, ys.length );
+    if ( errno ) { return NULL; }
+    // Growth of `xs` didn't fail, so:
+    ASSERT( size__can_add( xs->length, ys.length ) );
+    // Move along the elements of `xs` per the length of `ys`:
+    for ( size_t i = xs->length; i > at; i-- ) {
+        xs->e[ ( i - 1 ) + ys.length ] = xs->e[ i - 1 ];
+    }
+    xs->length += ys.length;
+    // Insert the elements of `ys` at `at` (now that they've been moved):
+    for ( size_t i = 0; i < ys.length; i++ ) {
+        {{type}} * const xs_e = vec_{{funcname}}__getp( *xs, at + i );
+        {{type}} const ys_e = arrayc_{{funcname}}__get( ys, i );
+        if ( copier == NULL ) {
+            *xs_e = ys_e;
+        } else {
+            errno = 0;
+            copier( xs_e, ys_e );
+            if ( errno ) { return NULL; }
+        }
+    }
+    return vec_{{funcname}}__getp( *xs, at );
+}
+
+
+{{type}} *
+vec_{{funcname}}__insert_arraym(
+        Vec_{{typename}} * const xs,
+        size_t const at,
+        ArrayM_{{typename}} const ys )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            at <= xs->length,
+            arraym_{{funcname}}__is_valid( ys ) );
+
+    return vec_{{funcname}}__insert_arraym_with( xs, at, ys, NULL );
+}
+
+
+{{type}} *
+vec_{{funcname}}__insert_arraym_with(
+        Vec_{{typename}} * const xs,
+        size_t const at,
+        ArrayM_{{typename}} const ys,
+        void ( * const copier )( {{type}} * to, {{type}} from ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            at <= xs->length,
+            arraym_{{funcname}}__is_valid( ys ) );
+
+    return vec_{{funcname}}__insert_arrayc_with(
+               xs, at, arrayc_{{funcname}}__view_arraym( ys ), copier );
+}
+
+
+{{type}} *
+vec_{{funcname}}__insert_vec(
+        Vec_{{typename}} * const xs,
+        size_t const at,
+        Vec_{{typename}} const ys )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            at <= xs->length,
+            vec_{{funcname}}__is_valid( ys ) );
+
+    return vec_{{funcname}}__insert_vec_with( xs, at, ys, NULL );
+}
+
+
+{{type}} *
+vec_{{funcname}}__insert_vec_with(
+        Vec_{{typename}} * const xs,
+        size_t const at,
+        Vec_{{typename}} const ys,
+        void ( * const copier )( {{type}} * to, {{type}} from ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            at <= xs->length,
+            vec_{{funcname}}__is_valid( ys ) );
+
+    return vec_{{funcname}}__insert_arrayc_with(
+               xs, at, arrayc_{{funcname}}__view_vec( ys ), copier );
+}
+
+
+{{type}} *
+vec_{{funcname}}__append(
+        Vec_{{typename}} * const xs,
+        {{type}} const x )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    return vec_{{funcname}}__append_with( xs, x, NULL );
+}
+
+
+{{type}} *
+vec_{{funcname}}__append_with(
+        Vec_{{typename}} * const xs,
+        {{type}} const x,
+        void ( * const copier )( {{type}} * to, {{type}} from ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    return vec_{{funcname}}__append_arrayc_with(
+               xs, ARRAYC_{{macroname}}( x ), copier );
+}
+
+
+{{type}} *
+vec_{{funcname}}__append_arrayc(
         Vec_{{typename}} * const xs,
         ArrayC_{{typename}} const ext )
 {
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
             arrayc_{{funcname}}__is_valid( ext ) );
 
-    errno = 0;
-    vec_{{funcname}}__grow_capacity_for( xs, ext.length );
-    if ( errno ) { return; }
-    for ( size_t i = 0; i < ext.length; i++ ) {
-        vec_{{funcname}}__append( xs, ext.e[ i ] );
-        // No reallocation should occur for each append(), so no errors:
-        ASSERT( errno == 0 );
-    }
+    return vec_{{funcname}}__append_arrayc_with( xs, ext, NULL );
 }
 
 
-void
-vec_{{funcname}}__extend_arraym(
+{{type}} *
+vec_{{funcname}}__append_arrayc_with(
+        Vec_{{typename}} * const xs,
+        ArrayC_{{typename}} const ext,
+        void ( * const copier )( {{type}} * to, {{type}} from ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            arrayc_{{funcname}}__is_valid( ext ) );
+
+    return vec_{{funcname}}__insert_arrayc_with(
+               xs, xs->length, ext, copier );
+}
+
+
+{{type}} *
+vec_{{funcname}}__append_arraym(
         Vec_{{typename}} * const xs,
         ArrayM_{{typename}} const ext )
 {
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
             arraym_{{funcname}}__is_valid( ext ) );
 
-    vec_{{funcname}}__extend_arrayc(
-        xs, arrayc_{{funcname}}__view_arraym( ext ) );
+    return vec_{{funcname}}__append_arraym_with( xs, ext, NULL );
 }
 
 
-void
-vec_{{funcname}}__extend_vec(
+{{type}} *
+vec_{{funcname}}__append_arraym_with(
+        Vec_{{typename}} * const xs,
+        ArrayM_{{typename}} const ext,
+        void ( * const copier )( {{type}} * to, {{type}} from ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            arraym_{{funcname}}__is_valid( ext ) );
+
+    return vec_{{funcname}}__append_arrayc_with(
+               xs, arrayc_{{funcname}}__view_arraym( ext ), copier );
+}
+
+
+{{type}} *
+vec_{{funcname}}__append_vec(
         Vec_{{typename}} * const xs,
         Vec_{{typename}} const ext )
 {
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
             vec_{{funcname}}__is_valid( ext ) );
 
-    vec_{{funcname}}__extend_arrayc( xs,
-            arrayc_{{funcname}}__view_vec( ext ) );
+    return vec_{{funcname}}__append_vec_with( xs, ext, NULL );
+}
+
+
+{{type}} *
+vec_{{funcname}}__append_vec_with(
+        Vec_{{typename}} * const xs,
+        Vec_{{typename}} const ext,
+        void ( * const copier )( {{type}} * to, {{type}} from ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            vec_{{funcname}}__is_valid( ext ) );
+
+    return vec_{{funcname}}__append_arrayc_with(
+               xs, arrayc_{{funcname}}__view_vec( ext ), copier );
+}
+
+
+{{type}} *
+vec_{{funcname}}__prepend(
+        Vec_{{typename}} * const xs,
+        {{type}} const x )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    return vec_{{funcname}}__prepend_with( xs, x, NULL );
+}
+
+
+{{type}} *
+vec_{{funcname}}__prepend_with(
+        Vec_{{typename}} * const xs,
+        {{type}} const x,
+        void ( * const copier )( {{type}} * to, {{type}} from ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    return vec_{{funcname}}__prepend_arrayc_with(
+               xs, ARRAYC_{{macroname}}( x ), copier );
+}
+
+
+{{type}} *
+vec_{{funcname}}__prepend_arrayc(
+        Vec_{{typename}} * const xs,
+        ArrayC_{{typename}} const ext )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            arrayc_{{funcname}}__is_valid( ext ) );
+
+    return vec_{{funcname}}__prepend_arrayc_with( xs, ext, NULL );
+}
+
+
+{{type}} *
+vec_{{funcname}}__prepend_arrayc_with(
+        Vec_{{typename}} * const xs,
+        ArrayC_{{typename}} const ext,
+        void ( * const copier )( {{type}} * to, {{type}} from ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            arrayc_{{funcname}}__is_valid( ext ) );
+
+    return vec_{{funcname}}__insert_arrayc_with(
+               xs, xs->length, ext, copier );
+}
+
+
+{{type}} *
+vec_{{funcname}}__prepend_arraym(
+        Vec_{{typename}} * const xs,
+        ArrayM_{{typename}} const ext )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            arraym_{{funcname}}__is_valid( ext ) );
+
+    return vec_{{funcname}}__prepend_arraym_with( xs, ext, NULL );
+}
+
+
+{{type}} *
+vec_{{funcname}}__prepend_arraym_with(
+        Vec_{{typename}} * const xs,
+        ArrayM_{{typename}} const ext,
+        void ( * const copier )( {{type}} * to, {{type}} from ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            arraym_{{funcname}}__is_valid( ext ) );
+
+    return vec_{{funcname}}__prepend_arrayc_with(
+               xs, arrayc_{{funcname}}__view_arraym( ext ), copier );
+}
+
+
+{{type}} *
+vec_{{funcname}}__prepend_vec(
+        Vec_{{typename}} * const xs,
+        Vec_{{typename}} const ext )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            vec_{{funcname}}__is_valid( ext ) );
+
+    return vec_{{funcname}}__prepend_vec_with( xs, ext, NULL );
+}
+
+
+{{type}} *
+vec_{{funcname}}__prepend_vec_with(
+        Vec_{{typename}} * const xs,
+        Vec_{{typename}} const ext,
+        void ( * const copier )( {{type}} * to, {{type}} from ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            vec_{{funcname}}__is_valid( ext ) );
+
+    return vec_{{funcname}}__prepend_arrayc_with(
+               xs, arrayc_{{funcname}}__view_vec( ext ), copier );
+}
+
+
+{{type}}
+vec_{{funcname}}__remove(
+        Vec_{{typename}} * const xs,
+        size_t const ix )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            ix < xs->length );
+
+    {{type}} const x = vec_{{funcname}}__get( *xs, ix );
+    for ( size_t i = ix + 1; i < xs->length; i++ ) {
+        xs->e[ i - 1 ] = xs->e[ i ];
+    }
+    xs->length--;
+    return x;
+}
+
+
+{{type}}
+vec_{{funcname}}__remove_with(
+        Vec_{{typename}} * const xs,
+        size_t const ix,
+        void ( * const freer )( {{type}} * x ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            ix < xs->length );
+
+    {{type}} * const x = vec_{{funcname}}__getp( *xs, ix );
+    for ( size_t i = ix + 1; i < xs->length; i++ ) {
+        xs->e[ i - 1 ] = xs->e[ i ];
+    }
+    xs->length--;
+    if ( freer != NULL ) {
+        freer( x );
+    }
+    return *x;
+}
+
+
+{{type}}
+vec_{{funcname}}__pop(
+        Vec_{{typename}} * const xs )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ), xs->length > 0 );
+
+    return vec_{{funcname}}__pop_with( xs, NULL );
+}
+
+
+{{type}}
+vec_{{funcname}}__pop_with(
+        Vec_{{typename}} * const xs,
+        void ( * const freer )( {{type}} * x ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ), xs->length > 0 );
+
+    return vec_{{funcname}}__remove_with( xs, xs->length - 1, freer );
+}
+
+
+void
+vec_{{funcname}}__popn(
+        Vec_{{typename}} * const xs,
+        size_t const n )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    xs->length = size__sub_b( xs->length, n );
+}
+
+
+void
+vec_{{funcname}}__popn_with(
+        Vec_{{typename}} * const xs,
+        size_t const n,
+        void ( * const freer )( {{type}} * ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    vec_{{funcname}}__eachp( vec_{{funcname}}__take_end( *xs, n ),
+                             .f = freer );
+    xs->length = size__sub_b( xs->length, n );
 }
 
 
@@ -957,40 +1330,6 @@ vec_{{funcname}}__lastm(
     ASSERT( vec_{{funcname}}__is_valid( xs ) );
 
     return arrayc_{{funcname}}__lastm( arrayc_{{funcname}}__view_vec( xs ) );
-}
-
-
-{{type}}
-vec_{{funcname}}__end(
-        Vec_{{typename}} const xs )
-{
-    ASSERT( vec_{{funcname}}__is_valid( xs ),
-            vec_{{funcname}}__isnt_empty( xs ) );
-
-    return arrayc_{{funcname}}__last(
-               arrayc_{{funcname}}__view_vec_whole( xs ) );
-}
-
-
-{{type}} *
-vec_{{funcname}}__endp(
-        Vec_{{typename}} const xs )
-{
-    ASSERT( vec_{{funcname}}__is_valid( xs ) );
-
-    return arraym_{{funcname}}__lastp(
-               arraym_{{funcname}}__view_vec_whole( xs ) );
-}
-
-
-Maybe_{{typename}}
-vec_{{funcname}}__endm(
-        Vec_{{typename}} const xs )
-{
-    ASSERT( vec_{{funcname}}__is_valid( xs ) );
-
-    return arrayc_{{funcname}}__lastm(
-               arrayc_{{funcname}}__view_vec_whole( xs ) );
 }
 
 
@@ -1194,6 +1533,30 @@ vec_{{funcname}}__right_half(
     ASSERT( vec_{{funcname}}__is_valid( xs ) );
 
     return vec_{{funcname}}__drop( xs, xs.length / 2 );
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__view_whole(
+        Vec_{{typename}} const xs )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+
+    Vec_{{typename}} v = xs;
+    v.length = xs.capacity;
+    return v;
+}
+
+
+Vec_{{typename}}
+vec_{{funcname}}__view_spare(
+        Vec_{{typename}} const xs )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+
+    return vec_{{funcname}}__take_end(
+               vec_{{funcname}}__view_whole( xs ),
+               vec_{{funcname}}__spare_capacity( xs ) );
 }
 
 
@@ -1728,19 +2091,262 @@ vec_{{funcname}}__replaced_by(
 }
 
 
+size_t
+vec_{{funcname}}__replacef_arrayc(
+        Vec_{{typename}} * const xs,
+        bool ( * const f )( {{type}} x ),
+        ArrayC_{{typename}} const repl )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            f != NULL,
+            arrayc_{{funcname}}__is_valid( repl ) );
+
+    return vec_{{funcname}}__replacef_arrayc_with( xs, f, repl, NULL, NULL );
+}
+
+
+size_t
+vec_{{funcname}}__replacef_arrayc_with(
+        Vec_{{typename}} * const xs,
+        bool ( * const f )( {{type}} x ),
+        ArrayC_{{typename}} const repl,
+        void ( * const copier )( {{type}} * to, {{type}} from ),
+        void ( * const freer )( {{type}} * x ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            f != NULL,
+            arrayc_{{funcname}}__is_valid( repl ) );
+
+    size_t nrepl = 0;
+    size_t offset = 0;
+    Maybe_size mi = { .value = 0 };
+    // Find an index in `xs` satisfying `f` past the previously-found index and
+    // the consequently-inserted replacement (so that we don't replace any
+    // elements inserted from the replacement array):
+    while ( mi = vec_{{funcname}}__find(
+                     vec_{{funcname}}__drop( *xs, offset ), f ),
+            !mi.nothing ) {
+        // `xs` can't be larger than `SIZE_MAX`, so:
+        ASSERT( size__can_add( mi.value, offset ) );
+        mi.value += offset; // offsets the `drop()` call above
+        // Remove the found element satisfying `f`:
+        vec_{{funcname}}__remove_with( xs, mi.value, freer );
+        if ( errno ) { return nrepl; }
+        // Now insert the replacement array at that index:
+        vec_{{funcname}}__insert_arrayc_with( xs, mi.value, repl, copier );
+        if ( errno ) { return nrepl; }
+        // Insertion didn't fail, so:
+        ASSERT( size__can_add( mi.value, repl.length ) );
+        offset = mi.value + repl.length;
+        nrepl++;
+    }
+    return nrepl;
+}
+
+
+size_t
+vec_{{funcname}}__replacef_arraym(
+        Vec_{{typename}} * const xs,
+        bool ( * const f )( {{type}} x ),
+        ArrayM_{{typename}} const repl )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            f != NULL,
+            arraym_{{funcname}}__is_valid( repl ) );
+
+    return vec_{{funcname}}__replacef_arraym_with( xs, f, repl, NULL, NULL );
+}
+
+
+size_t
+vec_{{funcname}}__replacef_arraym_with(
+        Vec_{{typename}} * const xs,
+        bool ( * const f )( {{type}} x ),
+        ArrayM_{{typename}} const repl,
+        void ( * const copier )( {{type}} * to, {{type}} from ),
+        void ( * const freer )( {{type}} * x ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            f != NULL,
+            arraym_{{funcname}}__is_valid( repl ) );
+
+    return vec_{{funcname}}__replacef_arrayc_with(
+               xs, f, arrayc_{{funcname}}__view_arraym( repl ),
+               copier, freer );
+}
+
+
+size_t
+vec_{{funcname}}__replacef_vec(
+        Vec_{{typename}} * const xs,
+        bool ( * const f )( {{type}} x ),
+        Vec_{{typename}} const repl )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            f != NULL,
+            vec_{{funcname}}__is_valid( repl ) );
+
+    return vec_{{funcname}}__replacef_vec_with( xs, f, repl, NULL, NULL );
+}
+
+
+size_t
+vec_{{funcname}}__replacef_vec_with(
+        Vec_{{typename}} * const xs,
+        bool ( * const f )( {{type}} x ),
+        Vec_{{typename}} const repl,
+        void ( * const copier )( {{type}} * to, {{type}} from ),
+        void ( * const freer )( {{type}} * x ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            f != NULL,
+            vec_{{funcname}}__is_valid( repl ) );
+
+    return vec_{{funcname}}__replacef_arrayc_with(
+               xs, f, arrayc_{{funcname}}__view_vec( repl ), copier, freer );
+}
+
+
+size_t
+vec_{{funcname}}__replace_arrayc_by(
+        Vec_{{typename}} * const xs,
+        {{type}} const el,
+        ArrayC_{{typename}} const repl,
+        bool ( * const eq )( {{type}} x, {{type}} y ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            arrayc_{{funcname}}__is_valid( repl ) );
+
+    return vec_{{funcname}}__replace_arrayc_by_with(
+               xs, el, repl, eq, NULL, NULL );
+}
+
+
+size_t
+vec_{{funcname}}__replace_arrayc_by_with(
+        Vec_{{typename}} * const xs,
+        {{type}} const el,
+        ArrayC_{{typename}} const repl,
+        bool ( * const eq )( {{type}} x, {{type}} y ),
+        void ( * const copier )( {{type}} * to, {{type}} from ),
+        void ( * const freer )( {{type}} * x ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            arrayc_{{funcname}}__is_valid( repl ) );
+
+    size_t nrepl = 0;
+    size_t offset = 0;
+    Maybe_size mi = { .value = 0 };
+    // Find an index in `xs` satisfying `f` past the previously-found index and
+    // the consequently-inserted replacement (so that we don't replace any
+    // elements inserted from the replacement array):
+    while ( mi = vec_{{funcname}}__elem_index_by(
+                     vec_{{funcname}}__drop( *xs, offset ), el, eq ),
+            !mi.nothing ) {
+        // `xs` can't be larger than `SIZE_MAX`, so:
+        ASSERT( size__can_add( mi.value, offset ) );
+        mi.value += offset; // offsets the `drop()` call above
+        // Remove the found element equal to `el` under `eq`:
+        vec_{{funcname}}__remove_with( xs, mi.value, freer );
+        if ( errno ) { return nrepl; }
+        // Now insert the replacement array at that index:
+        vec_{{funcname}}__insert_arrayc_with( xs, mi.value, repl, copier );
+        if ( errno ) { return nrepl; }
+        // Insertion didn't fail, so:
+        ASSERT( size__can_add( mi.value, repl.length ) );
+        offset = mi.value + repl.length;
+        nrepl++;
+    }
+    return nrepl;
+}
+
+
+size_t
+vec_{{funcname}}__replace_arraym_by(
+        Vec_{{typename}} * const xs,
+        {{type}} const el,
+        ArrayM_{{typename}} const repl,
+        bool ( * const eq )( {{type}} x, {{type}} y ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            arraym_{{funcname}}__is_valid( repl ) );
+
+    return vec_{{funcname}}__replace_arraym_by_with(
+               xs, el, repl, eq, NULL, NULL );
+}
+
+
+size_t
+vec_{{funcname}}__replace_arraym_by_with(
+        Vec_{{typename}} * const xs,
+        {{type}} const el,
+        ArrayM_{{typename}} const repl,
+        bool ( * const eq )( {{type}} x, {{type}} y ),
+        void ( * const copier )( {{type}} * to, {{type}} from ),
+        void ( * const freer )( {{type}} * x ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            arraym_{{funcname}}__is_valid( repl ) );
+
+    return vec_{{funcname}}__replace_arrayc_by_with(
+               xs, el, arrayc_{{funcname}}__view_arraym( repl ), eq,
+               copier, freer );
+}
+
+
+size_t
+vec_{{funcname}}__replace_vec_by(
+        Vec_{{typename}} * const xs,
+        {{type}} const el,
+        Vec_{{typename}} const repl,
+        bool ( * const eq )( {{type}} x, {{type}} y ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            vec_{{funcname}}__is_valid( repl ) );
+
+    return vec_{{funcname}}__replace_vec_by_with(
+               xs, el, repl, eq, NULL, NULL );
+}
+
+
+size_t
+vec_{{funcname}}__replace_vec_by_with(
+        Vec_{{typename}} * const xs,
+        {{type}} const el,
+        Vec_{{typename}} const repl,
+        bool ( * const eq )( {{type}} x, {{type}} y ),
+        void ( * const copier )( {{type}} * to, {{type}} from ),
+        void ( * const freer )( {{type}} * x ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            vec_{{funcname}}__is_valid( repl ) );
+
+    return vec_{{funcname}}__replace_arrayc_by_with(
+               xs, el, arrayc_{{funcname}}__view_vec( repl ), eq,
+               copier, freer );
+}
+
+
 static
 void
-filter( Vec_{{typename}} * const xs,
+filter(
+        Vec_{{typename}} * const xs,
         bool ( * const f )( {{type}} ),
-        bool result )
+        bool const result,
+        void ( * const freer )( {{type}} * ) )
 {
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ), f != NULL );
 
     size_t count = 0;
     for ( size_t i = 0; i < xs->length; i++ ) {
-        {{type}} const el = xs->e[ i ];
-        if ( f( el ) == result ) {
-            xs->e[ count ] = el;
+        {{type}} * const count_el = vec_{{funcname}}__getp( *xs, count );
+        {{type}} const i_el = vec_{{funcname}}__get( *xs, i );
+        if ( f( i_el ) == result ) {
+            // Don't free the `count`th element if it's the `i`th element:
+            if ( count != i && freer != NULL ) {
+                freer( count_el );
+            }
+            *count_el = i_el;
             count++;
         }
     }
@@ -1755,7 +2361,19 @@ vec_{{funcname}}__filter(
 {
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ), f != NULL );
 
-    filter( xs, f, true );
+    filter( xs, f, true, NULL );
+}
+
+
+void
+vec_{{funcname}}__filter_with(
+        Vec_{{typename}} * const xs,
+        bool ( * const f )( {{type}} ),
+        void ( * const freer )( {{type}} * ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ), f != NULL );
+
+    filter( xs, f, true, freer );
 }
 
 
@@ -1766,7 +2384,44 @@ vec_{{funcname}}__filter_not(
 {
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ), f != NULL );
 
-    filter( xs, f, false );
+    filter( xs, f, false, NULL );
+}
+
+
+void
+vec_{{funcname}}__filter_not_with(
+        Vec_{{typename}} * const xs,
+        bool ( * const f )( {{type}} ),
+        void ( * const freer )( {{type}} * ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ), f != NULL );
+
+    filter( xs, f, false, freer );
+}
+
+
+static
+Vec_{{typename}}
+filtered(
+        Vec_{{typename}} const xs,
+        bool ( * const f )( {{type}} ),
+        bool const result )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
+
+    errno = 0;
+    Vec_{{typename}} new = vec_{{funcname}}__new_calloc( xs.length );
+    if ( errno ) { return new; }
+    for ( size_t i = 0; i < xs.length; i++ ) {
+        {{type}} const el = vec_{{funcname}}__get( xs, i );
+        bool const r = f( el );
+        if ( errno ) { return new; }
+        if ( r == result ) {
+            vec_{{funcname}}__append( &new, el );
+            ASSERT( errno == 0 ); // no reallocation should have occurred
+        }
+    }
+    return new;
 }
 
 
@@ -1777,11 +2432,7 @@ vec_{{funcname}}__filtered(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    errno = 0;
-    Vec_{{typename}} new = vec_{{funcname}}__copy_vec( xs );
-    if ( errno ) { return ( Vec_{{typename}} ){ 0 }; }
-    vec_{{funcname}}__filter( &new, f );
-    return new;
+    return filtered( xs, f, true );
 }
 
 
@@ -1792,11 +2443,7 @@ vec_{{funcname}}__filtered_not(
 {
     ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
 
-    errno = 0;
-    Vec_{{typename}} new = vec_{{funcname}}__copy_vec( xs );
-    if ( errno ) { return ( Vec_{{typename}} ){ 0 }; }
-    vec_{{funcname}}__filter_not( &new, f );
-    return new;
+    return filtered( xs, f, false );
 }
 
 
@@ -1850,6 +2497,17 @@ arrayc_{{funcname}}__view_vec_whole(
 }
 
 
+ArrayC_{{typename}}
+arrayc_{{funcname}}__view_vec_spare(
+        Vec_{{typename}} const xs )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+
+    return arrayc_{{funcname}}__view_arraym(
+               arraym_{{funcname}}__view_vec_spare( xs ) );
+}
+
+
 ArrayM_{{typename}}
 arraym_{{funcname}}__view_vec(
         Vec_{{typename}} const xs )
@@ -1862,7 +2520,17 @@ ArrayM_{{typename}}
 arraym_{{funcname}}__view_vec_whole(
         Vec_{{typename}} const xs )
 {
-    return ( ArrayM_{{typename}} ){ .e = xs.e, .length = xs.capacity };
+    return arraym_{{funcname}}__view_vec(
+               vec_{{funcname}}__view_whole( xs ) );
+}
+
+
+ArrayM_{{typename}}
+arraym_{{funcname}}__view_vec_spare(
+        Vec_{{typename}} const xs )
+{
+    return arraym_{{funcname}}__view_vec(
+               vec_{{funcname}}__view_spare( xs ) );
 }
 
 
@@ -2121,6 +2789,96 @@ vec_{{funcname}}__replaced(
 }
 
 
+size_t
+vec_{{funcname}}__replace_arrayc(
+        Vec_{{typename}} * const xs,
+        {{type}} const el,
+        ArrayC_{{typename}} const repl )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            arrayc_{{funcname}}__is_valid( repl ) );
+
+    return vec_{{funcname}}__replace_arrayc_with(
+               xs, el, repl, NULL, NULL );
+}
+
+
+size_t
+vec_{{funcname}}__replace_arrayc_with(
+        Vec_{{typename}} * const xs,
+        {{type}} const el,
+        ArrayC_{{typename}} const repl,
+        void ( * const copier )( {{type}} * to, {{type}} from ),
+        void ( * const freer )( {{type}} * x ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            arrayc_{{funcname}}__is_valid( repl ) );
+
+    return vec_{{funcname}}__replace_arrayc_by_with(
+               xs, el, repl, equalf, copier, freer );
+}
+
+
+size_t
+vec_{{funcname}}__replace_arraym(
+        Vec_{{typename}} * const xs,
+        {{type}} const el,
+        ArrayM_{{typename}} const repl )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            arraym_{{funcname}}__is_valid( repl ) );
+
+    return vec_{{funcname}}__replace_arraym_with(
+               xs, el, repl, NULL, NULL );
+}
+
+
+size_t
+vec_{{funcname}}__replace_arraym_with(
+        Vec_{{typename}} * const xs,
+        {{type}} const el,
+        ArrayM_{{typename}} const repl,
+        void ( * const copier )( {{type}} * to, {{type}} from ),
+        void ( * const freer )( {{type}} * x ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            arraym_{{funcname}}__is_valid( repl ) );
+
+    return vec_{{funcname}}__replace_arraym_by_with(
+               xs, el, repl, equalf, copier, freer );
+}
+
+
+size_t
+vec_{{funcname}}__replace_vec(
+        Vec_{{typename}} * const xs,
+        {{type}} const el,
+        Vec_{{typename}} const repl )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            vec_{{funcname}}__is_valid( repl ) );
+
+    return vec_{{funcname}}__replace_vec_with(
+               xs, el, repl, NULL, NULL );
+}
+
+
+size_t
+vec_{{funcname}}__replace_vec_with(
+        Vec_{{typename}} * const xs,
+        {{type}} const el,
+        Vec_{{typename}} const repl,
+        void ( * const copier )( {{type}} * to, {{type}} from ),
+        void ( * const freer )( {{type}} * x ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ),
+            vec_{{funcname}}__is_valid( repl ) );
+
+    return vec_{{funcname}}__replace_vec_by_with(
+               xs, el, repl, equalf, copier, freer );
+}
+
+
 {% endif %} {# EQ #}
 
 
@@ -2144,134 +2902,6 @@ vec_{{funcname}}__view_buf0(
 {
     return vec_{{funcname}}__view_arraym(
                arraym_{{funcname}}__view_buf0( buf ) );
-}
-
-
-Vec_{{typename}}
-vec_{{funcname}}__copy_buf(
-        {{type}} const * const buf )
-{
-    return vec_{{funcname}}__copy_buf_with( buf, NULL );
-}
-
-
-Vec_{{typename}}
-vec_{{funcname}}__copy_buf_with(
-        {{type}} const * const buf,
-        void ( * const copier )( {{type}} * new_el, {{type}} from_el ) )
-{
-    return vec_{{funcname}}__view_arraym(
-               arraym_{{funcname}}__copy_buf_with( buf, copier ) );
-}
-
-
-Vec_{{typename}}
-vec_{{funcname}}__copy_buf0(
-        {{type}} const * const buf )
-{
-    return vec_{{funcname}}__copy_buf0_with( buf, NULL );
-}
-
-
-Vec_{{typename}}
-vec_{{funcname}}__copy_buf0_with(
-        {{type}} const * const buf,
-        void ( * const copier )( {{type}} * new_el, {{type}} from_el ) )
-{
-    return vec_{{funcname}}__view_arraym(
-               arraym_{{funcname}}__copy_buf0_with( buf, copier ) );
-}
-
-
-Vec_{{typename}}
-vec_{{funcname}}__copyc_buf(
-        {{type}} const * const buf,
-        size_t const capacity )
-{
-    return vec_{{funcname}}__copyc_arrayc(
-               arrayc_{{funcname}}__view_buf( buf ), capacity );
-}
-
-
-Vec_{{typename}}
-vec_{{funcname}}__copyc_buf0(
-        {{type}} const * const buf,
-        size_t const capacity )
-{
-    return vec_{{funcname}}__copyc_arrayc(
-               arrayc_{{funcname}}__view_buf0( buf ), capacity );
-}
-
-
-void
-vec_{{funcname}}__copy_buf_into(
-        Vec_{{typename}} * const to,
-        {{type}} const * const from )
-{
-    ASSERT( to != NULL, vec_{{funcname}}__is_valid( *to ) );
-
-    vec_{{funcname}}__copy_buf_into_with( to, from, NULL );
-}
-
-
-void
-vec_{{funcname}}__copy_buf_into_with(
-        Vec_{{typename}} * const to,
-        {{type}} const * const from,
-        void ( * const copier )( {{type}} * to_el, {{type}} from_el ) )
-{
-    ASSERT( to != NULL, vec_{{funcname}}__is_valid( *to ) );
-
-    vec_{{funcname}}__copy_arrayc_into_with(
-        to, arrayc_{{funcname}}__view_buf( from ), copier );
-}
-
-
-void
-vec_{{funcname}}__copy_buf0_into(
-        Vec_{{typename}} * const to,
-        {{type}} const * const from )
-{
-    ASSERT( to != NULL, vec_{{funcname}}__is_valid( *to ) );
-
-    vec_{{funcname}}__copy_buf0_into_with( to, from, NULL );
-}
-
-
-void
-vec_{{funcname}}__copy_buf0_into_with(
-        Vec_{{typename}} * const to,
-        {{type}} const * const from,
-        void ( * const copier )( {{type}} * to_el, {{type}} from_el ) )
-{
-    ASSERT( to != NULL, vec_{{funcname}}__is_valid( *to ) );
-
-    vec_{{funcname}}__copy_arrayc_into_with(
-        to, arrayc_{{funcname}}__view_buf0( from ), copier );
-}
-
-
-void
-vec_{{funcname}}__extend_buf(
-        Vec_{{typename}} * const v,
-        {{type}} const * const buf )
-{
-    ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ) );
-
-    vec_{{funcname}}__extend_arrayc(
-        v, arrayc_{{funcname}}__view_buf( buf ) );
-}
-
-
-void
-vec_{{funcname}}__extend_buf0(
-        Vec_{{typename}} * const v,
-        {{type}} const * const buf )
-{
-    ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ) );
-
-    vec_{{funcname}}__extend_arrayc(
-        v, arrayc_{{funcname}}__view_buf0( buf ) );
 }
 
 
@@ -2355,36 +2985,6 @@ vec_{{funcname}}__filtered_null(
 }
 
 
-{% if 'EQ' in typeclasses %}
-
-
-bool
-vec_{{funcname}}__equal_buf(
-        Vec_{{typename}} const vec,
-        {{type}} const * const buf )
-{
-    ASSERT( vec_{{funcname}}__is_valid( vec ) );
-
-    return arrayc_{{funcname}}__equal(
-               arrayc_{{funcname}}__view_vec( vec ),
-               arrayc_{{funcname}}__view_buf( buf ) );
-}
-
-
-bool
-vec_{{funcname}}__equal_buf0(
-        Vec_{{typename}} const vec,
-        {{type}} const * const buf )
-{
-    ASSERT( vec_{{funcname}}__is_valid( vec ) );
-
-    return arrayc_{{funcname}}__equal(
-               arrayc_{{funcname}}__view_vec( vec ),
-               arrayc_{{funcname}}__view_buf0( buf ) );
-}
-
-
-{% endif %} {# EQ #}
 {% endif %} {# NULL #}
 
 
@@ -2409,16 +3009,6 @@ vec_{{funcname}}__copy_str(
 
 
 Vec_{{typename}}
-vec_{{funcname}}__copy_str_with(
-        char const * const str,
-        void ( * const copier )( {{type}} * new_el, char c ) )
-{
-    return vec_{{funcname}}__view_arraym(
-               arraym_{{funcname}}__copy_str_with( str, copier ) );
-}
-
-
-Vec_{{typename}}
 vec_{{funcname}}__copyc_str(
         char const * const str,
         size_t const capacity )
@@ -2426,7 +3016,7 @@ vec_{{funcname}}__copyc_str(
     size_t const len = str__length( str );
     Vec_{{typename}} vec = vec_{{funcname}}__new_alloc( MAX( len, capacity ) );
     if ( errno ) { return vec; }
-    vec_{{funcname}}__extend_str( &vec, str );
+    vec_{{funcname}}__append_str( &vec, str );
     return vec;
 }
 
@@ -2438,59 +3028,60 @@ vec_{{funcname}}__copy_str_into(
 {
     ASSERT( to != NULL, vec_{{funcname}}__is_valid( *to ) );
 
-    vec_{{funcname}}__copy_str_into_with( to, from, NULL );
-}
-
-
-void
-vec_{{funcname}}__copy_str_into_with(
-        Vec_{{typename}} * const to,
-        char const * const from,
-        void ( * const copier )( {{type}} * to_el, char from_el ) )
-{
-    ASSERT( to != NULL, vec_{{funcname}}__is_valid( *to ) );
-
     vec_{{funcname}}__empty( to );
-    vec_{{funcname}}__extend_str_with( to, from, copier );
+    vec_{{funcname}}__append_str( to, from );
 }
 
 
-void
-vec_{{funcname}}__extend_str(
+{{type}} *
+vec_{{funcname}}__insert_str(
+        Vec_{{typename}} * const v,
+        size_t const at,
+        char const * const str )
+{
+    ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ),
+            at <= v->length );
+
+    size_t const len = str__length( str );
+    vec_{{funcname}}__grow_capacity_for( v, len );
+    if ( errno ) { return NULL; }
+    // Growth of `v` didn't fail, so:
+    ASSERT( size__can_add( v->length, len ) );
+    // Move along the elements of `v` per the length of `ys`:
+    for ( size_t i = v->length; i > at; i-- ) {
+        v->e[ ( i - 1 ) + len ] = v->e[ i - 1 ];
+    }
+    v->length += len;
+    // Insert the elements of `ys` at `at` (now that they've been moved):
+    for ( size_t i = 0; i < len; i++ ) {
+        {{type}} * const v_el = vec_{{funcname}}__getp( *v, at + i );
+        ASSERT( v_el != NULL );
+        char const c = str[ i ];
+        *v_el = {{funcname}}__from_char( c );
+    }
+    return vec_{{funcname}}__getp( *v, at );
+}
+
+
+{{type}} *
+vec_{{funcname}}__append_str(
         Vec_{{typename}} * const v,
         char const * const str )
 {
     ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ) );
 
-    vec_{{funcname}}__extend_str_with( v, str, NULL );
+    return vec_{{funcname}}__insert_str( v, v->length, str );
 }
 
 
-void
-vec_{{funcname}}__extend_str_with(
+{{type}} *
+vec_{{funcname}}__prepend_str(
         Vec_{{typename}} * const v,
-        char const * const str,
-        void ( * const copier )( {{type}} * v_el, char from_el ) )
+        char const * const str )
 {
     ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ) );
 
-    errno = 0;
-    size_t const len = str__length( str );
-    vec_{{funcname}}__grow_capacity_for( v, len );
-    if ( errno ) { return; }
-    for ( size_t i = 0; i < len; i++ ) {
-        ASSERT( size__can_add( v->length, i ) );
-        {{type}} * const v_el = vec_{{funcname}}__getp( *v, v->length );
-        ASSERT( v_el != NULL );
-        char const c = str[ i ];
-        if ( copier == NULL ) {
-            *v_el = {{funcname}}__from_char( c );
-        } else {
-            copier( v_el, c );
-        }
-        if ( errno ) { return; }
-        v->length++;
-    }
+    return vec_{{funcname}}__insert_str( v, 0, str );
 }
 
 
@@ -2504,16 +3095,6 @@ vec_{{funcname}}__copy_str0(
 
 
 Vec_{{typename}}
-vec_{{funcname}}__copy_str0_with(
-        char const * const str,
-        void ( * const copier )( {{type}} * new_el, char c ) )
-{
-    return vec_{{funcname}}__view_arraym(
-               arraym_{{funcname}}__copy_str0_with( str, copier ) );
-}
-
-
-Vec_{{typename}}
 vec_{{funcname}}__copyc_str0(
         char const * const str,
         size_t const capacity )
@@ -2521,7 +3102,7 @@ vec_{{funcname}}__copyc_str0(
     size_t const sz = str__size( str );
     Vec_{{typename}} vec = vec_{{funcname}}__new_alloc( MAX( sz, capacity ) );
     if ( errno ) { return vec; }
-    vec_{{funcname}}__extend_str0( &vec, str );
+    vec_{{funcname}}__append_str0( &vec, str );
     return vec;
 }
 
@@ -2533,61 +3114,60 @@ vec_{{funcname}}__copy_str0_into(
 {
     ASSERT( to != NULL, vec_{{funcname}}__is_valid( *to ) );
 
-    vec_{{funcname}}__copy_str0_into_with( to, from, NULL );
-}
-
-
-void
-vec_{{funcname}}__copy_str0_into_with(
-        Vec_{{typename}} * const to,
-        char const * const from,
-        void ( * const copier )( {{type}} * to_el, char from_el ) )
-{
-    ASSERT( to != NULL, vec_{{funcname}}__is_valid( *to ) );
-
     vec_{{funcname}}__empty( to );
-    vec_{{funcname}}__extend_str0_with( to, from, copier );
+    vec_{{funcname}}__append_str0( to, from );
 }
 
 
-void
-vec_{{funcname}}__extend_str0(
+{{type}} *
+vec_{{funcname}}__insert_str0(
+        Vec_{{typename}} * const v,
+        size_t const at,
+        char const * const str )
+{
+    ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ),
+            at <= v->length );
+
+    size_t const sz = str__size( str );
+    vec_{{funcname}}__grow_capacity_for( v, sz );
+    if ( errno ) { return NULL; }
+    // Growth of `v` didn't fail, so:
+    ASSERT( size__can_add( v->length, sz ) );
+    // Move along the elements of `v` per the length of `ys`:
+    for ( size_t i = v->length; i > at; i-- ) {
+        v->e[ ( i - 1 ) + sz ] = v->e[ i - 1 ];
+    }
+    v->length += sz;
+    // Insert the elements of `ys` at `at` (now that they've been moved):
+    for ( size_t i = 0; i < sz; i++ ) {
+        {{type}} * const v_el = vec_{{funcname}}__getp( *v, at + i );
+        ASSERT( v_el != NULL );
+        char const c = str[ i ];
+        *v_el = {{funcname}}__from_char( c );
+    }
+    return vec_{{funcname}}__getp( *v, at );
+}
+
+
+{{type}} *
+vec_{{funcname}}__append_str0(
         Vec_{{typename}} * const v,
         char const * const str )
 {
     ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ) );
 
-    vec_{{funcname}}__extend_str0_with( v, str, NULL );
+    return vec_{{funcname}}__insert_str0( v, v->length, str );
 }
 
 
-void
-vec_{{funcname}}__extend_str0_with(
+{{type}} *
+vec_{{funcname}}__prepend_str0(
         Vec_{{typename}} * const v,
-        char const * const str,
-        void ( * const copier )( {{type}} * v_el, char from_el ) )
+        char const * const str )
 {
     ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ) );
 
-    // We use separate code from `extend_str_with()` to ensure that the
-    // function requires only a single reallocation:
-    errno = 0;
-    size_t const sz = str__size( str );
-    vec_{{funcname}}__grow_capacity_for( v, sz );
-    if ( errno ) { return; }
-    for ( size_t i = 0; i < sz; i++ ) {
-        ASSERT( size__can_add( v->length, i ) );
-        {{type}} * const v_el = vec_{{funcname}}__getp( *v, v->length );
-        ASSERT( v_el != NULL );
-        char const c = str[ i ];
-        if ( copier == NULL ) {
-            *v_el = {{funcname}}__from_char( c );
-        } else {
-            copier( v_el, c );
-        }
-        if ( errno ) { return; }
-        v->length++;
-    }
+    return vec_{{funcname}}__insert_str0( v, 0, str );
 }
 
 
@@ -2602,7 +3182,7 @@ vec_{{funcname}}__new_fmt(
     va_list ap;
     va_start( ap, format );
     errno = 0;
-    vec_{{funcname}}__extend_fmtv( &v, format, ap );
+    vec_{{funcname}}__append_fmtv( &v, format, ap );
     int const err = errno;
     va_end( ap );
     if ( err ) { errno = err; }
@@ -2623,7 +3203,7 @@ vec_{{funcname}}__fmt_into(
     va_start( ap, format );
     vec_{{funcname}}__empty( v );
     errno = 0;
-    vec_{{funcname}}__extend_fmtv( v, format, ap );
+    vec_{{funcname}}__append_fmtv( v, format, ap );
     int const err = errno;
     va_end( ap );
     if ( err ) { errno = err; }
@@ -2631,7 +3211,7 @@ vec_{{funcname}}__fmt_into(
 
 
 void
-vec_{{funcname}}__extend_fmt(
+vec_{{funcname}}__append_fmt(
         Vec_{{typename}} * const v,
         char const * const format,
         ... )
@@ -2642,7 +3222,7 @@ vec_{{funcname}}__extend_fmt(
     va_list ap;
     va_start( ap, format );
     errno = 0;
-    vec_{{funcname}}__extend_fmtv( v, format, ap );
+    vec_{{funcname}}__append_fmtv( v, format, ap );
     int const err = errno;
     va_end( ap );
     if ( err ) { errno = err; }
@@ -2650,7 +3230,7 @@ vec_{{funcname}}__extend_fmt(
 
 
 void
-vec_{{funcname}}__extend_fmtv(
+vec_{{funcname}}__append_fmtv(
         Vec_{{typename}} * const v,
         char const * const format,
         va_list ap )
@@ -2666,10 +3246,10 @@ vec_{{funcname}}__extend_fmtv(
         errno = EIO;
     }
     if ( errno ) { return; }
-    vec_{{funcname}}__extend_str( v, ext );
-    int const extend_err = errno;
+    vec_{{funcname}}__append_str( v, ext );
+    int const append_err = errno;
     free( ext );
-    if ( extend_err ) { errno = extend_err; }
+    if ( append_err ) { errno = append_err; }
 }
 
 
@@ -2684,7 +3264,7 @@ vec_{{funcname}}__new_fmt0(
     va_list ap;
     va_start( ap, format );
     errno = 0;
-    vec_{{funcname}}__extend_fmtv0( &v, format, ap );
+    vec_{{funcname}}__append_fmtv0( &v, format, ap );
     int const err = errno;
     va_end( ap );
     if ( err ) { errno = err; }
@@ -2705,7 +3285,7 @@ vec_{{funcname}}__fmt0_into(
     va_start( ap, format );
     vec_{{funcname}}__empty( v );
     errno = 0;
-    vec_{{funcname}}__extend_fmtv0( v, format, ap );
+    vec_{{funcname}}__append_fmtv0( v, format, ap );
     int const err = errno;
     va_end( ap );
     if ( err ) { errno = err; }
@@ -2713,7 +3293,7 @@ vec_{{funcname}}__fmt0_into(
 
 
 void
-vec_{{funcname}}__extend_fmt0(
+vec_{{funcname}}__append_fmt0(
         Vec_{{typename}} * const v,
         char const * const format,
         ... )
@@ -2724,7 +3304,7 @@ vec_{{funcname}}__extend_fmt0(
     va_list ap;
     va_start( ap, format );
     errno = 0;
-    vec_{{funcname}}__extend_fmtv0( v, format, ap );
+    vec_{{funcname}}__append_fmtv0( v, format, ap );
     int const err = errno;
     va_end( ap );
     if ( err ) { errno = err; }
@@ -2732,7 +3312,7 @@ vec_{{funcname}}__extend_fmt0(
 
 
 void
-vec_{{funcname}}__extend_fmtv0(
+vec_{{funcname}}__append_fmtv0(
         Vec_{{typename}} * const v,
         char const * const format,
         va_list ap )
@@ -2748,10 +3328,10 @@ vec_{{funcname}}__extend_fmtv0(
         errno = EIO;
     }
     if ( errno ) { return; }
-    vec_{{funcname}}__extend_str0( v, ext );
-    int const extend_err = errno;
+    vec_{{funcname}}__append_str0( v, ext );
+    int const append_err = errno;
     free( ext );
-    if ( extend_err ) { errno = extend_err; }
+    if ( append_err ) { errno = append_err; }
 }
 
 
