@@ -485,6 +485,7 @@ vec_{{funcname}}__ensure_capacity(
 {
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
 
+    errno = 0;
     if ( xs->capacity < min_capacity ) {
         vec_{{funcname}}__realloc( xs, min_capacity );
     }
@@ -508,6 +509,7 @@ vec_{{funcname}}__shrink_capacity_to(
 {
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
 
+    errno = 0;
     if ( xs->capacity > max_capacity ) {
         vec_{{funcname}}__realloc( xs, max_capacity );
     }
