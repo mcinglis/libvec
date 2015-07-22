@@ -1166,6 +1166,36 @@ vec_{{funcname}}__filter_not_with(
         void ( * freer )( {{type}} * ) );
 
 
+void
+vec_{{funcname}}__filterv(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}}, void * ptr ),
+        void * ptr );
+
+
+void
+vec_{{funcname}}__filterv_with(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}}, void * ptr ),
+        void * ptr,
+        void ( * freer )( {{type}} * ) );
+
+
+void
+vec_{{funcname}}__filterv_not(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}}, void * ptr ),
+        void * ptr );
+
+
+void
+vec_{{funcname}}__filterv_not_with(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}}, void * ptr ),
+        void * ptr,
+        void ( * freer )( {{type}} * ) );
+
+
 struct vec_{{funcname}}__each__options {
     void ( * f )( {{type}} );
     bool ( * b )( {{type}} );

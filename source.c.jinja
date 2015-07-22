@@ -2402,6 +2402,84 @@ vec_{{funcname}}__filter_not_with(
 }
 
 
+static
+void
+filterv(
+        Vec_{{typename}} * const xs,
+        bool ( * const f )( {{type}}, void * ptr ),
+        void * const ptr,
+        bool const result,
+        void ( * const freer )( {{type}} * ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ), f != NULL );
+
+    size_t count = 0;
+    for ( size_t i = 0; i < xs->length; i++ ) {
+        {{type}} * const count_el = vec_{{funcname}}__getp( *xs, count );
+        {{type}} const i_el = vec_{{funcname}}__get( *xs, i );
+        if ( f( i_el, ptr ) != result ) {
+            // Don't free the `count`th element if it's the `i`th element:
+            if ( count != i && freer != NULL ) {
+                freer( count_el );
+            }
+            *count_el = i_el;
+            count++;
+        }
+    }
+    xs->length = count;
+}
+
+
+void
+vec_{{funcname}}__filterv(
+        Vec_{{typename}} * const xs,
+        bool ( * const f )( {{type}}, void * ptr ),
+        void * const ptr )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ), f != NULL );
+
+    filterv( xs, f, ptr, true, NULL );
+}
+
+
+void
+vec_{{funcname}}__filterv_with(
+        Vec_{{typename}} * const xs,
+        bool ( * const f )( {{type}}, void * ptr ),
+        void * const ptr,
+        void ( * const freer )( {{type}} * ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ), f != NULL );
+
+    filterv( xs, f, ptr, true, freer );
+}
+
+
+void
+vec_{{funcname}}__filterv_not(
+        Vec_{{typename}} * const xs,
+        bool ( * const f )( {{type}}, void * ptr ),
+        void * const ptr )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ), f != NULL );
+
+    filterv( xs, f, ptr, false, NULL );
+}
+
+
+void
+vec_{{funcname}}__filterv_not_with(
+        Vec_{{typename}} * const xs,
+        bool ( * const f )( {{type}}, void * ptr ),
+        void * const ptr,
+        void ( * const freer )( {{type}} * ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ), f != NULL );
+
+    filterv( xs, f, ptr, false, freer );
+}
+
+
 bool
 vec_{{funcname}}__each_(
         Vec_{{typename}} const xs,
