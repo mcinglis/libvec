@@ -2960,17 +2960,17 @@ vec_{{funcname}}__all_null(
 }
 
 
-{{type}} *
+void
 vec_{{funcname}}__append_null(
         Vec_{{typename}} * const v )
 {
     ASSERT( v != NULL, vec_{{funcname}}__is_valid( *v ) );
 
-    return vec_{{funcname}}__append( v, {{funcname}}__null() );
+    vec_{{funcname}}__append( v, {{funcname}}__null() );
 }
 
 
-{{type}} *
+void
 vec_{{funcname}}__term_null(
         Vec_{{typename}} * const v )
 {
@@ -2979,7 +2979,6 @@ vec_{{funcname}}__term_null(
     if ( !vec_{{funcname}}__last_is_null( *v ) ) {
         vec_{{funcname}}__append_null( v );
     }
-    return vec_{{funcname}}__lastp( *v );
 }
 
 

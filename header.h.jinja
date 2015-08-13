@@ -1495,17 +1495,18 @@ vec_{{funcname}}__all_null(
 // Equivalent to `vec_{{funcname}}__all( v, {{funcname}}__is_null )`.
 
 
-{{type}} *
+void
 vec_{{funcname}}__append_null(
         Vec_{{typename}} * );
-// Equivalent to `vec_{{funcname}}__append( v, {{funcname}}__null() )`.
+// Equivalent to `vec_{{funcname}}__append( v, {{funcname}}__null() )`, but
+// doesn't return a value so it can be used with higher-order functions.
 
 
-{{type}} *
+void
 vec_{{funcname}}__term_null(
         Vec_{{typename}} * );
 // If `!vec_{{funcname}}__last_is_null( *v )`, performs
-// `vec_{{funcname}}__append_null()`. Returns the pointer to the last element.
+// `vec_{{funcname}}__append_null()`.
 
 
 bool
