@@ -892,6 +892,13 @@ vec_{{funcname}}__pick(
         bool ( * f )( {{type}} const * pick, {{type}} x ) );
 
 
+{{type}} *
+vec_{{funcname}}__pickv(
+        Vec_{{typename}} xs,
+        bool ( * f )( {{type}} const * pick, {{type}} x, void * ptr ),
+        void * ptr );
+
+
 bool
 vec_{{funcname}}__equal_by(
         Vec_{{typename}} xs,

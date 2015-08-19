@@ -1816,6 +1816,19 @@ vec_{{funcname}}__pick(
 }
 
 
+{{type}} *
+vec_{{funcname}}__pickv(
+        Vec_{{typename}} const xs,
+        bool ( * const f )( {{type}} const * pick, {{type}} x, void * ptr ),
+        void * const ptr )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), f != NULL );
+
+    return arraym_{{funcname}}__pickv(
+               arraym_{{funcname}}__view_vec( xs ), f, ptr );
+}
+
+
 bool
 vec_{{funcname}}__equal_by(
         Vec_{{typename}} const xs,
