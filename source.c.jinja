@@ -169,6 +169,18 @@ vec_{{funcname}}__free(
 
 
 void
+vec_{{funcname}}__free_with(
+        Vec_{{typename}} * const xs,
+        void ( * const freer )( {{type}} * const x ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    vec_{{funcname}}__eachp( *xs, .f = freer );
+    vec_{{funcname}}__free( xs );
+}
+
+
+void
 vec_{{funcname}}__realloc(
         Vec_{{typename}} * const xs,
         size_t const new_capacity )

@@ -98,6 +98,12 @@ vec_{{funcname}}__free(
 
 
 void
+vec_{{funcname}}__free_with(
+        Vec_{{typename}} * xs,
+        void ( * freer )( {{type}} * x ) );
+
+
+void
 vec_{{funcname}}__realloc(
         Vec_{{typename}} * xs,
         size_t new_capacity );
