@@ -905,6 +905,110 @@ vec_{{funcname}}__pickv(
         void * ptr );
 
 
+void
+vec_{{funcname}}__filter(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}} ) );
+
+
+void
+vec_{{funcname}}__filter_with(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}} ),
+        void ( * freer )( {{type}} * ) );
+
+
+void
+vec_{{funcname}}__filter_not(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}} ) );
+
+
+void
+vec_{{funcname}}__filter_not_with(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}} ),
+        void ( * freer )( {{type}} * ) );
+
+
+void
+vec_{{funcname}}__filterv(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}}, void * ptr ),
+        void * ptr );
+
+
+void
+vec_{{funcname}}__filterv_with(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}}, void * ptr ),
+        void * ptr,
+        void ( * freer )( {{type}} * ) );
+
+
+void
+vec_{{funcname}}__filterv_not(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}}, void * ptr ),
+        void * ptr );
+
+
+void
+vec_{{funcname}}__filterv_not_with(
+        Vec_{{typename}} * xs,
+        bool ( * f )( {{type}}, void * ptr ),
+        void * ptr,
+        void ( * freer )( {{type}} * ) );
+
+
+struct vec_{{funcname}}__each__options {
+    void ( * f )( {{type}} );
+    bool ( * b )( {{type}} );
+    void ( * fi )( size_t index, {{type}} );
+    bool ( * bi )( size_t index, {{type}} );
+    void ( * fv )( void const * v, {{type}} );
+    bool ( * bv )( void const * v, {{type}} );
+    void ( * fvi )( void const * v, size_t index, {{type}} );
+    bool ( * bvi )( void const * v, size_t index, {{type}} );
+    bool ( * where )( {{type}} );
+    bool ( * where_not )( {{type}} );
+    void const * v;
+};
+
+bool
+vec_{{funcname}}__each_(
+        Vec_{{typename}},
+        struct vec_{{funcname}}__each__options );
+
+#define vec_{{funcname}}__each( XS, ... ) \
+    vec_{{funcname}}__each_( XS, \
+        ( struct vec_{{funcname}}__each__options ){ __VA_ARGS__ } )
+
+
+struct vec_{{funcname}}__eachp__options {
+    void ( * f )( {{type}} * );
+    bool ( * b )( {{type}} * );
+    void ( * fi )( size_t index, {{type}} * );
+    bool ( * bi )( size_t index, {{type}} * );
+    void ( * fv )( void const * v, {{type}} * );
+    bool ( * bv )( void const * v, {{type}} * );
+    void ( * fvi )( void const * v, size_t index, {{type}} * );
+    bool ( * bvi )( void const * v, size_t index, {{type}} * );
+    bool ( * where )( {{type}} );
+    bool ( * where_not )( {{type}} );
+    void const * v;
+};
+
+bool
+vec_{{funcname}}__eachp_(
+        Vec_{{typename}},
+        struct vec_{{funcname}}__eachp__options );
+
+#define vec_{{funcname}}__eachp( XS, ... ) \
+    vec_{{funcname}}__eachp_( XS, \
+        ( struct vec_{{funcname}}__eachp__options ){ __VA_ARGS__ } )
+
+
 bool
 vec_{{funcname}}__equal_by(
         Vec_{{typename}} xs,
@@ -1153,108 +1257,59 @@ vec_{{funcname}}__replace_vec_by_with(
         void ( * freer )( {{type}} * x ) );
 
 
-void
-vec_{{funcname}}__filter(
-        Vec_{{typename}} * xs,
-        bool ( * f )( {{type}} ) );
+ord
+vec_{{funcname}}__compare_by(
+        Vec_{{typename}} xs,
+        Vec_{{typename}} ys,
+        ord ( * cmp )( {{type}} x, {{type}} y ) );
 
-
-void
-vec_{{funcname}}__filter_with(
-        Vec_{{typename}} * xs,
-        bool ( * f )( {{type}} ),
-        void ( * freer )( {{type}} * ) );
-
-
-void
-vec_{{funcname}}__filter_not(
-        Vec_{{typename}} * xs,
-        bool ( * f )( {{type}} ) );
-
-
-void
-vec_{{funcname}}__filter_not_with(
-        Vec_{{typename}} * xs,
-        bool ( * f )( {{type}} ),
-        void ( * freer )( {{type}} * ) );
-
-
-void
-vec_{{funcname}}__filterv(
-        Vec_{{typename}} * xs,
-        bool ( * f )( {{type}}, void * ptr ),
-        void * ptr );
-
-
-void
-vec_{{funcname}}__filterv_with(
-        Vec_{{typename}} * xs,
-        bool ( * f )( {{type}}, void * ptr ),
-        void * ptr,
-        void ( * freer )( {{type}} * ) );
-
-
-void
-vec_{{funcname}}__filterv_not(
-        Vec_{{typename}} * xs,
-        bool ( * f )( {{type}}, void * ptr ),
-        void * ptr );
-
-
-void
-vec_{{funcname}}__filterv_not_with(
-        Vec_{{typename}} * xs,
-        bool ( * f )( {{type}}, void * ptr ),
-        void * ptr,
-        void ( * freer )( {{type}} * ) );
-
-
-struct vec_{{funcname}}__each__options {
-    void ( * f )( {{type}} );
-    bool ( * b )( {{type}} );
-    void ( * fi )( size_t index, {{type}} );
-    bool ( * bi )( size_t index, {{type}} );
-    void ( * fv )( void const * v, {{type}} );
-    bool ( * bv )( void const * v, {{type}} );
-    void ( * fvi )( void const * v, size_t index, {{type}} );
-    bool ( * bvi )( void const * v, size_t index, {{type}} );
-    bool ( * where )( {{type}} );
-    bool ( * where_not )( {{type}} );
-    void const * v;
-};
 
 bool
-vec_{{funcname}}__each_(
+vec_{{funcname}}__is_ascending_by(
         Vec_{{typename}},
-        struct vec_{{funcname}}__each__options );
+        ord ( * cmp )( {{type}}, {{type}} ) );
 
-#define vec_{{funcname}}__each( XS, ... ) \
-    vec_{{funcname}}__each_( XS, \
-        ( struct vec_{{funcname}}__each__options ){ __VA_ARGS__ } )
-
-
-struct vec_{{funcname}}__eachp__options {
-    void ( * f )( {{type}} * );
-    bool ( * b )( {{type}} * );
-    void ( * fi )( size_t index, {{type}} * );
-    bool ( * bi )( size_t index, {{type}} * );
-    void ( * fv )( void const * v, {{type}} * );
-    bool ( * bv )( void const * v, {{type}} * );
-    void ( * fvi )( void const * v, size_t index, {{type}} * );
-    bool ( * bvi )( void const * v, size_t index, {{type}} * );
-    bool ( * where )( {{type}} );
-    bool ( * where_not )( {{type}} );
-    void const * v;
-};
 
 bool
-vec_{{funcname}}__eachp_(
+vec_{{funcname}}__is_strictly_ascending_by(
         Vec_{{typename}},
-        struct vec_{{funcname}}__eachp__options );
+        ord ( * cmp )( {{type}}, {{type}} ) );
 
-#define vec_{{funcname}}__eachp( XS, ... ) \
-    vec_{{funcname}}__eachp_( XS, \
-        ( struct vec_{{funcname}}__eachp__options ){ __VA_ARGS__ } )
+
+bool
+vec_{{funcname}}__is_descending_by(
+        Vec_{{typename}},
+        ord ( * cmp )( {{type}}, {{type}} ) );
+
+
+bool
+vec_{{funcname}}__is_strictly_descending_by(
+        Vec_{{typename}},
+        ord ( * cmp )( {{type}}, {{type}} ) );
+
+
+{{type}}
+vec_{{funcname}}__minimum_by(
+        Vec_{{typename}},
+        ord ( * cmp )( {{type}}, {{type}} ) );
+
+
+{{type}}
+vec_{{funcname}}__maximum_by(
+        Vec_{{typename}},
+        ord ( * cmp )( {{type}}, {{type}} ) );
+
+
+void
+vec_{{funcname}}__quicksort_by(
+        Vec_{{typename}} xs,
+        ord ( * cmp )( {{type}}, {{type}} ) );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__quicksorted_by(
+        Vec_{{typename}} xs,
+        ord ( * cmp )( {{type}}, {{type}} ) );
 
 
 ArrayC_{{typename}}
@@ -1472,6 +1527,60 @@ vec_{{funcname}}__replace_vec_with(
 
 
 {% endif %} {# EQ #}
+
+
+
+
+{% if 'ORD' in typeclasses %}
+
+
+ord
+vec_{{funcname}}__compare(
+        Vec_{{typename}},
+        Vec_{{typename}} );
+
+
+bool
+vec_{{funcname}}__is_ascending(
+        Vec_{{typename}} );
+
+
+bool
+vec_{{funcname}}__is_strictly_ascending(
+        Vec_{{typename}} );
+
+
+bool
+vec_{{funcname}}__is_descending(
+        Vec_{{typename}} );
+
+
+bool
+vec_{{funcname}}__is_strictly_descending(
+        Vec_{{typename}} );
+
+
+{{type}}
+vec_{{funcname}}__minimum(
+        Vec_{{typename}} );
+
+
+{{type}}
+vec_{{funcname}}__maximum(
+        Vec_{{typename}} );
+
+
+void
+vec_{{funcname}}__quicksort(
+        Vec_{{typename}} );
+
+
+Vec_{{typename}}
+vec_{{funcname}}__quicksorted(
+        Vec_{{typename}} );
+
+
+{% endif %} {# ORD #}
 
 
 
