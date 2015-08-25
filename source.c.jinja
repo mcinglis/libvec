@@ -2228,9 +2228,22 @@ vec_{{funcname}}__elem_or_append_by(
 {
     ASSERT( vec_{{funcname}}__is_valid( *xs ), eq != NULL );
 
+    return vec_{{funcname}}__elem_or_append_with_by( xs, y, NULL, eq );
+}
+
+
+{{type}} *
+vec_{{funcname}}__elem_or_append_with_by(
+        Vec_{{typename}} * const xs,
+        {{type}} const y,
+        void ( * const copier )( {{type}} * to, {{type}} from ),
+        bool ( * const eq )( {{type}} x, {{type}} y ) )
+{
+    ASSERT( vec_{{funcname}}__is_valid( *xs ), eq != NULL );
+
     {{type}} * const p = vec_{{funcname}}__elem_ptr_by( *xs, y, eq );
     if ( p == NULL ) {
-        return vec_{{funcname}}__append( xs, y );
+        return vec_{{funcname}}__append_with( xs, y, copier );
     } else {
         return p;
     }

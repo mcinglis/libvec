@@ -1125,6 +1125,14 @@ vec_{{funcname}}__elem_or_append_by(
         bool ( * eq )( {{ type}} x, {{type}} y ) );
 
 
+{{type}} *
+vec_{{funcname}}__elem_or_append_with_by(
+        Vec_{{typename}} * xs,
+        {{type}} y,
+        void ( * copier )( {{type}} * to, {{type}} from ),
+        bool ( * eq )( {{ type}} x, {{type}} y ) );
+
+
 void
 vec_{{funcname}}__replacef(
         Vec_{{typename}},
