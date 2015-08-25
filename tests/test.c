@@ -84,7 +84,9 @@ test_capacity_growth( void )
     Vec_int v = { 0 };
     ASSERT( v.capacity == 0 );
     vec_int__ensure_capacity( &v, 32 );
-    ASSERT( vec_int__equal( v, ( Vec_int ){ 0 } ), v.capacity == 32 );
+    ASSERT( vec_int__equal( v, ( Vec_int ){ 0 } ),
+            vec_int__is_empty( v ),
+            v.capacity == 32 );
     Vec_int u = VEC_INT( 123, 345, 678 );
     vec_int__append_vec( &v, u );
     ASSERT( vec_int__equal( v, u ), v.capacity == 32 );

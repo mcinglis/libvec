@@ -116,6 +116,19 @@ vec_{{funcname}}__realloc_with(
         void ( * freer )( {{type}} * ) );
 
 
+void
+vec_{{funcname}}__reallocz(
+        Vec_{{typename}} * xs,
+        size_t new_capacity );
+
+
+void
+vec_{{funcname}}__reallocz_with(
+        Vec_{{typename}} * xs,
+        size_t new_capacity,
+        void ( * freer )( {{type}} * ) );
+
+
 Vec_{{typename}}
 vec_{{funcname}}__view_arraym(
         ArrayM_{{typename}} );

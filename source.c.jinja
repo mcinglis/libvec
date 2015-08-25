@@ -143,9 +143,8 @@ vec_{{funcname}}__new_calloc(
         size_t const capacity )
 {
     errno = 0;
-    Vec_{{typename}} new = vec_{{funcname}}__new_alloc( capacity );
-    if ( errno ) { return new; }
-    vec_{{funcname}}__memzero( new );
+    Vec_{{typename}} new = { 0 };
+    vec_{{funcname}}__reallocz( &new, capacity );
     return new;
 }
 
@@ -201,6 +200,35 @@ vec_{{funcname}}__realloc_with(
 
     ArrayM_{{typename}} array = arraym_{{funcname}}__view_vec_whole( *xs );
     arraym_{{funcname}}__realloc_with( &array, new_capacity, freer );
+    if ( errno ) { return; }
+    *xs = ( Vec_{{typename}} ){
+              .e        = array.e,
+              .length   = MIN( xs->length, new_capacity ),
+              .capacity = new_capacity };
+}
+
+
+void
+vec_{{funcname}}__reallocz(
+        Vec_{{typename}} * const xs,
+        size_t const new_capacity )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    vec_{{funcname}}__reallocz_with( xs, new_capacity, NULL );
+}
+
+
+void
+vec_{{funcname}}__reallocz_with(
+        Vec_{{typename}} * const xs,
+        size_t const new_capacity,
+        void ( * const freer )( {{type}} * lost_el ) )
+{
+    ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
+
+    ArrayM_{{typename}} array = arraym_{{funcname}}__view_vec_whole( *xs );
+    arraym_{{funcname}}__reallocz_with( &array, new_capacity, freer );
     if ( errno ) { return; }
     *xs = ( Vec_{{typename}} ){
               .e        = array.e,
@@ -440,11 +468,11 @@ vec_{{funcname}}__grow_capacity(
 
     errno = 0;
     if ( xs->capacity == 0 ) {
-        vec_{{funcname}}__realloc( xs, init_capacity );
+        vec_{{funcname}}__reallocz( xs, init_capacity );
     } else if ( xs->capacity == size__max_bound() ) {
         errno = ENOMEM;
     } else {
-        vec_{{funcname}}__realloc( xs,
+        vec_{{funcname}}__reallocz( xs,
             size__mul_b( xs->capacity, growth_mul ) );
     }
 }
@@ -463,7 +491,7 @@ vec_{{funcname}}__grow_capacity_by(
     } else if ( !size__can_add( xs->capacity, to_grow ) ) {
         errno = ENOMEM;
     } else {
-        vec_{{funcname}}__realloc( xs, xs->capacity + to_grow );
+        vec_{{funcname}}__reallocz( xs, xs->capacity + to_grow );
     }
 }
 
@@ -486,7 +514,7 @@ vec_{{funcname}}__grow_capacity_for(
                        ? init_capacity
                        : size__mul_b( new_capacity, growth_mul );
     }
-    vec_{{funcname}}__realloc( xs, new_capacity );
+    vec_{{funcname}}__reallocz( xs, new_capacity );
 }
 
 
@@ -499,7 +527,7 @@ vec_{{funcname}}__ensure_capacity(
 
     errno = 0;
     if ( xs->capacity < min_capacity ) {
-        vec_{{funcname}}__realloc( xs, min_capacity );
+        vec_{{funcname}}__reallocz( xs, min_capacity );
     }
 }
 
@@ -510,7 +538,7 @@ vec_{{funcname}}__shrink_capacity(
 {
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
 
-    vec_{{funcname}}__realloc( xs, xs->capacity / 2 );
+    vec_{{funcname}}__reallocz( xs, xs->capacity / 2 );
 }
 
 
@@ -523,7 +551,7 @@ vec_{{funcname}}__shrink_capacity_to(
 
     errno = 0;
     if ( xs->capacity > max_capacity ) {
-        vec_{{funcname}}__realloc( xs, max_capacity );
+        vec_{{funcname}}__reallocz( xs, max_capacity );
     }
 }
 
@@ -535,7 +563,7 @@ vec_{{funcname}}__shrink_capacity_by(
 {
     ASSERT( xs != NULL, vec_{{funcname}}__is_valid( *xs ) );
 
-    vec_{{funcname}}__realloc( xs,
+    vec_{{funcname}}__reallocz( xs,
             size__sub_b( xs->capacity, to_shrink ) );
 }
 
