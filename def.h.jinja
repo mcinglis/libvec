@@ -54,5 +54,11 @@ typedef struct vec_{{funcname}} {
       .capacity = NELEM( ( {{type}}[] ){ __VA_ARGS__ } ) }
 
 
+#define VEC_{{macroname}}__FOR_EACH( VEC, EL ) \
+    for ( {{typename}} * EL = ( VEC ).e; \
+          EL != ( VEC ).e + ( VEC ).length; \
+          EL++ )
+
+
 #endif // ifndef LIBVEC_DEF_VEC_{{macroname}}_H
 
