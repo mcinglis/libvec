@@ -2025,6 +2025,8 @@ vec_{{funcname}}__each_(
         Vec_{{typename}} const xs,
         struct vec_{{funcname}}__each__options const o )
 {
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+
     return arrayc_{{funcname}}__each(
                arrayc_{{funcname}}__view_vec( xs ),
                .f = o.f, .b = o.b, .fi = o.fi, .bi = o.bi,
@@ -2039,12 +2041,26 @@ vec_{{funcname}}__eachp_(
         Vec_{{typename}} const xs,
         struct vec_{{funcname}}__eachp__options const o )
 {
+    ASSERT( vec_{{funcname}}__is_valid( xs ) );
+
     return arraym_{{funcname}}__eachp(
                arraym_{{funcname}}__view_vec( xs ),
                .f = o.f, .b = o.b, .fi = o.fi, .bi = o.bi,
                .fv = o.fv, .bv = o.bv, .fvi = o.fvi, .bvi = o.bvi,
                .where = o.where, .where_not = o.where_not,
                .v = o.v );
+}
+
+
+double
+vec_{{funcname}}__sum_to_double_by(
+        Vec_{{typename}} const xs,
+        double ( * const converter )( {{type}} ) )
+{
+    ASSERT( vec_{{funcname}}__is_valid( xs ), converter != NULL );
+
+    return arrayc_{{funcname}}__sum_to_double_by(
+               arrayc_{{funcname}}__view_vec( xs ), converter );
 }
 
 

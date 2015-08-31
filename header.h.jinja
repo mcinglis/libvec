@@ -1022,6 +1022,12 @@ vec_{{funcname}}__eachp_(
         ( struct vec_{{funcname}}__eachp__options ){ __VA_ARGS__ } )
 
 
+double
+vec_{{funcname}}__sum_to_double_by(
+        Vec_{{typename}},
+        double ( * converter )( {{type}} ) );
+
+
 bool
 vec_{{funcname}}__equal_by(
         Vec_{{typename}} xs,

@@ -14,6 +14,21 @@
 
 static
 void
+test_macros( void )
+{
+    {
+        Vec_int const xs = VEC_INT( 1, 2, 3, 4, 5 );
+        int sum = 0;
+        VEC_INT__FOR_EACH( xs, x ) {
+            sum += *x;
+        }
+        ASSERT( sum == 15 );
+    }
+}
+
+
+static
+void
 test_vec_int( void )
 {
     Vec_int xs = vec_int__new( ( int[] ){ 1, 2, 3, 4, 5 },
@@ -453,6 +468,8 @@ int
 main( void )
 {
     printf( "Running tests...\n" );
+    test_macros();
+    printf( "  macro tests passed\n" );
     test_vec_int();
     printf( "  Vec_int tests passed\n" );
     test_vec_ptr_long();
