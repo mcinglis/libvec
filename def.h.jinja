@@ -55,7 +55,7 @@ typedef struct vec_{{funcname}} {
 
 
 #define VEC_{{macroname}}__FOR_EACH( VEC, EL ) \
-    for ( {{typename}} * EL = ( VEC ).e; \
+    for ( {{type}} * EL = ( VEC ).e; \
           EL != ( VEC ).e + ( VEC ).length; \
           EL++ )
 
